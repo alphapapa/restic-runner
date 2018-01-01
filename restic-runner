@@ -1,0 +1,207 @@
+#!/bin/bash
+
+# restic-runner
+# http://github.com/alphapapa/restic-runner
+
+# * Instructions
+
+# Repository config files should specify these variables:
+
+# $RESTIC_REPOSITORY: Path to repository
+# $RESTIC_PASSWORD_FILE: Path to password file
+
+# Backup set config files should specify these variables:
+
+# $tag: Tag string for backup set.
+# TODO: Rename to include_paths
+# $include_files: An array of strings, each of which is a path to backup.
+# $exclude_patterns: An array of strings, each of which is an exclude glob pattern.
+# $keep_policy: An array of "--keep-period N" strings (unquoted in the array)
+
+# * Defaults
+
+config_dir=~/.config/backup/restic
+
+# * Functions
+
+function debug {
+    if [[ $debug ]]
+    then
+        function debug {
+            echo "DEBUG: $@" >&2
+        }
+        debug "$@"
+    else
+        function debug {
+            true
+        }
+    fi
+}
+function error {
+    echo "ERROR: $@" >&2
+    ((errors++))  # Initializes automatically
+}
+function die {
+    error "$@"
+    exit $errors
+}
+function usage {
+    cat <<EOF
+$0 [OPTIONS] ...?
+
+This does something cool!
+
+Options
+  -d, --debug  Print debug info
+  -h, --help   I need somebody!
+EOF
+}
+
+function log {
+    echo "LOG ($(date --rfc-3339=seconds)): $@"
+}
+function log_du {
+    log "Repo size: $(du -hs "$RESTIC_REPOSITORY")"
+}
+function repo_du {
+    $(du -bs "$RESTIC_REPOSITORY") | awk '{print $1}'
+}
+
+function expand_exclude_patterns {
+    # If $exclude_patterns is non-empty, return a string of
+    # "--exclude=PATTERN" for each pattern.
+
+    if [[ ${exclude_patterns[@]} ]]
+    then
+        for pattern in "${exclude_patterns[@]}"
+        do
+            result="$result --exclude=$pattern"
+        done
+        echo "$result"
+    else
+        return 1  # Is this correct?
+    fi
+}
+
+# ** Commands
+
+function backup {
+    log "BACKING UP..."
+
+    restic backup \
+           --one-file-system \
+           --exclude-caches \
+           --exclude-if-present .nobackup \
+           $(expand_exclude_patterns) \
+           --tag "$tag" \
+           "${include_files[@]}"
+}
+function check {
+    log "CHECKING..."
+
+    restic check
+}
+function forget {
+    log "FORGETTING AND PRUNING..."
+
+    restic forget \
+           --tag "$tag" \
+           --prune ${keep_policy[@]}
+}
+function init {
+    log "INITIALIZING..."
+
+    restic init
+}
+
+# * Args
+
+args=$(getopt -n "$0" -o dh -l debug,repo:,set:,tag:,help -- "$@") || exit 1
+eval set -- "$args"
+
+while true
+do
+    case "$1" in
+        -d|--debug)
+            debug=true
+            ;;
+        -h|--help)
+            usage
+            exit
+            ;;
+        --repo)
+            # Destination repo
+            shift
+            repo=$1
+            ;;
+        --set)
+            # Backup set
+            shift
+            set=$1
+            ;;
+        --tag)
+            # Backup tag
+            shift
+            tag=$1
+            ;;
+        --)
+            # Remaining args
+            shift
+            commands=("$@")
+            break
+            ;;
+    esac
+
+    shift
+done
+
+debug "ARGS: $args"
+debug "Commands: ${commands[@]}"
+
+# ** Verify required arguments
+
+[[ ${commands[@]} ]] || die "No command specified (one or more of: backup, check, forget)"
+
+# The set isn't required for, e.g. check, and restic will give its own
+# error if necessary, so we can skip these checks for now.
+
+#  [[ $repo ]] || die "No repo specified"
+#  [[ $set ]] || die "No backup set specified"
+
+# * Include repo and set files
+
+# The set isn't required for, e.g. check, and restic will give its own
+# error if necessary, so we can skip these checks for now.
+
+source $config_dir/repos/$repo # || die "Can't source repo file: $config_dir/repos/$repo"
+source $config_dir/sets/$set # || die "Can't source set file: $config_dir/sets/$set"
+
+# * Main
+
+# Run command functions
+for command in ${commands[@]}
+do
+    # Log disk usage before running command
+    du_before=$(repo_du)
+
+    # Run command (backup, forget, prune, etc.)
+    $command || die "$command failed."
+
+    # Log disk usage after running command
+    du_after=$(repo_du)
+
+    # Compute and log difference (converting bytes to megabytes)
+    du_difference_MB=$(echo "($du_after - $du_before) / (1024 * 1024)" | bc)
+    du_after_MB=$(echo "$du_after / (1024 * 1024)" | bc)
+    if [[ $(($du_after - $du_before)) -gt -1 ]]
+    then
+        plus_minus="+"
+    else
+        plus_minus="-"
+    fi
+
+    log "Repo size after $command: $du_after_MB MB (${plus_minus}${du_difference_MB} MB)"
+done
+
+# Exit with number of errors, which is perfect for chronic.
+exit $errors
