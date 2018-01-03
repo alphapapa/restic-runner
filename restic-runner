@@ -80,6 +80,26 @@ function expand_exclude_patterns {
     fi
 }
 
+function human_bytes {
+    # Return bytes ($1) converted to MB, or GB with 3 decimal places,
+    # as appropriate.
+    local bytes=$1
+
+    if [[ $bytes -ge $(( 1024 ** 3 )) ]]
+    then
+        local suffix=GB
+        local expt=3
+        local scale=3
+    else
+        local suffix=MB
+        local expt=2
+        local scale=0
+    fi
+
+    echo $(bc <<<"scale=$scale; $bytes / (1024^$expt)") $suffix
+}
+
+
 # ** Commands
 
 function backup {
@@ -191,9 +211,9 @@ do
     # Log disk usage after running command
     du_after=$(repo_du)
 
-    # Compute and log difference (converting bytes to megabytes)
-    du_difference_MB=$(echo "($du_after - $du_before) / (1024 * 1024)" | bc)
-    du_after_MB=$(echo "$du_after / (1024 * 1024)" | bc)
+    # Compute and log difference (converting bytes to MB or GB)
+    du_difference_human=$(human_bytes $(( $du_after - $du_before )))
+    du_after_human=$(human_bytes $du_after)
     if [[ $(($du_after - $du_before)) -gt -1 ]]
     then
         plus_minus="+"
@@ -201,7 +221,7 @@ do
         plus_minus="-"
     fi
 
-    log "Repo size after $command: $du_after_MB MB (${plus_minus}${du_difference_MB} MB)"
+    log "Repo size after $command: $du_after_human (${plus_minus}${du_difference_human})"
 done
 
 # Exit with number of errors, which is perfect for chronic.
