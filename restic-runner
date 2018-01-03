@@ -61,7 +61,7 @@ function log {
     echo "LOG ($(date --rfc-3339=seconds)): $@"
 }
 function repo_du {
-    $(du -bs "$RESTIC_REPOSITORY") | awk '{print $1}'
+    du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
 }
 
 function expand_exclude_patterns {
