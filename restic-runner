@@ -24,6 +24,8 @@ config_dir=~/.config/backup/restic
 
 # * Functions
 
+# ** Script functions
+
 function debug {
     if [[ $debug ]]
     then
@@ -56,13 +58,11 @@ Options
   -h, --help   I need somebody!
 EOF
 }
-
 function log {
     echo "LOG ($(date --rfc-3339=seconds)): $@"
 }
-function repo_du {
-    du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
-}
+
+# ** Helper functions
 
 function expand_exclude_patterns {
     # If $exclude_patterns is non-empty, return a string of
@@ -78,6 +78,10 @@ function expand_exclude_patterns {
     else
         return 1  # Is this correct?
     fi
+}
+
+function repo_du {
+    du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
 }
 
 function human_bytes {
@@ -98,6 +102,7 @@ function human_bytes {
 
     echo $(bc <<<"scale=$scale; $bytes / (1024^$expt)") $suffix
 }
+
 function human_duration {
     # Return human-friendly difference between timestamps ($1 and $2).
     # $2 should be the later timestamp.  Timestamps should be strings
@@ -119,7 +124,6 @@ function human_duration {
 
     echo "$time"
 }
-
 
 # ** Commands
 
