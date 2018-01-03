@@ -98,6 +98,27 @@ function human_bytes {
 
     echo $(bc <<<"scale=$scale; $bytes / (1024^$expt)") $suffix
 }
+function human_duration {
+    # Return human-friendly difference between timestamps ($1 and $2).
+    # $2 should be the later timestamp.  Timestamps should be strings
+    # in any form that GNU date accepts.
+
+    local ts1=$(date +%s --date "$1")
+    local ts2=$(date +%s --date "$2")
+    local difference=$(( $ts2 - $ts1 ))
+
+    local hours=$(bc <<<"$difference / 60 / 60")
+    local minutes=$(bc <<<"$difference / 60 % 60")
+    local seconds=$(bc <<<"$difference % 60")
+
+    local time
+    [[ $hours -gt 0 ]] && time="${hours}h"
+    [[ $minutes -gt 0 ]] && time="${time}${minutes}m"
+    [[ $seconds -gt 0 ]] && time="${time}${seconds}s"
+    [[ $time ]] || time="0s"
+
+    echo "$time"
+}
 
 
 # ** Commands
@@ -202,14 +223,16 @@ source $config_dir/sets/$set # || die "Can't source set file: $config_dir/sets/$
 # Run command functions
 for command in ${commands[@]}
 do
-    # Log disk usage before running command
+    # Log before command
     du_before=$(repo_du)
+    date_before=$(date)
 
     # Run command (backup, forget, prune, etc.)
     $command || die "$command failed."
 
-    # Log disk usage after running command
+    # Log after command
     du_after=$(repo_du)
+    date_after=$(date)
 
     # Compute and log difference (converting bytes to MB or GB)
     du_difference_human=$(human_bytes $(( $du_after - $du_before )))
@@ -221,7 +244,10 @@ do
         plus_minus="-"
     fi
 
-    log "Repo size after $command: $du_after_human (${plus_minus}${du_difference_human})"
+    duration=$(human_duration "$date_before" "$date_after")
+
+    log "$command finished.  Duration: $duration  Repo size: $du_after_human (${plus_minus}${du_difference_human}"
+
 done
 
 # Exit with number of errors, which is perfect for chronic.
