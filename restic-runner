@@ -173,6 +173,10 @@ debug "Commands: ${commands[@]}"
 # The set isn't required for, e.g. check, and restic will give its own
 # error if necessary, so we can skip these checks for now.
 
+# MAYBE: If we change to a temporary, empty directory when sourcing
+# these, it might help prevent shell glob expansion in case of
+# unquoted patterns.
+
 source $config_dir/repos/$repo # || die "Can't source repo file: $config_dir/repos/$repo"
 source $config_dir/sets/$set # || die "Can't source set file: $config_dir/sets/$set"
 
