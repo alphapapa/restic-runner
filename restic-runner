@@ -60,9 +60,6 @@ EOF
 function log {
     echo "LOG ($(date --rfc-3339=seconds)): $@"
 }
-function log_du {
-    log "Repo size: $(du -hs "$RESTIC_REPOSITORY")"
-}
 function repo_du {
     $(du -bs "$RESTIC_REPOSITORY") | awk '{print $1}'
 }
