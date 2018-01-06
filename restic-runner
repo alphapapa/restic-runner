@@ -14,7 +14,7 @@
 
 # $tag: Tag string for backup set.
 # TODO: Rename to include_paths
-# $include_files: An array of strings, each of which is a path to backup.
+# $include_paths: An array of strings, each of which is a path to backup.
 # $exclude_patterns: An array of strings, each of which is an exclude glob pattern.
 # $keep_policy: An array of "--keep-period N" strings (unquoted in the array)
 
@@ -146,7 +146,7 @@ function backup {
            --exclude-if-present .nobackup \
            $(expand_exclude_patterns) \
            --tag "$tag" \
-           "${include_files[@]}"
+           "${include_paths[@]}"
 }
 function check {
     log "CHECKING..."
