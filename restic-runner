@@ -62,18 +62,6 @@ function log {
 
 # ** Helper functions
 
-function added {
-    awk '/^+/ {print $0}'
-}
-function modified {
-    awk '/^M/ {print $0}'
-}
-function added_and_modified {
-    pee added modified || die "Please install the moreutils package."
-}
-function removed {
-    awk '/^-/ {print $0}'
-}
 
 
 function expand_exclude_patterns {
@@ -146,6 +134,21 @@ function human_duration {
     [[ $time ]] || time="0s"
 
     echo "$time"
+}
+
+# *** diff helpers
+
+function added {
+    awk '/^+/ {print $0}'
+}
+function modified {
+    awk '/^M/ {print $0}'
+}
+function added_and_modified {
+    pee added modified || die "Please install the moreutils package."
+}
+function removed {
+    awk '/^-/ {print $0}'
 }
 
 # ** Commands
