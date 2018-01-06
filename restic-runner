@@ -98,7 +98,7 @@ function repo_du {
     du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
 }
 
-function snapshot_ids {
+function snapshot-ids {
     # Return list of snapshot IDs
 
     restic snapshots \
@@ -212,13 +212,13 @@ function diff {
     then
         debug "Using latest snapshot and ${diff_args[0]}"
 
-        snapshots=($(snapshot_ids))
+        snapshots=($(snapshot-ids))
         snapshot1=${diff_args[0]}
         snapshot2=${snapshots[$(( ${#snapshots[@]} - 1))]}  # Latest
     else
         debug "Using latest two snapshots"
 
-        snapshots=($(snapshot_ids))
+        snapshots=($(snapshot-ids))
         num=${#snapshots[@]}
         snapshot1=${snapshots[$((num - 2))]}
         snapshot2=${snapshots[$((num - 1))]}
