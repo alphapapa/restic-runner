@@ -182,6 +182,7 @@ Example:
 ** Tips
 
 +  When running in a cron job, use the =chronic= utility from [[https://joeyh.name/code/moreutils/][moreutils]], which only sends output if the job exits with non-zero status.  (However, this means you'll only receive the log if an error occurs, so it won't be as easy to notice if your repo suddenly grows due to unintentionally backing up some files.)
++  Repo and set config files can be placed in subdirectories of their respective directories.  For example, the repo config file =~/.config/backup/restic/repos/remote/s3= can be referred to like =restic-runner --repo remote/s3=.
 
 ** License
 
