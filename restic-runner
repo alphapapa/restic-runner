@@ -64,6 +64,20 @@ function log {
 
 # ** Helper functions
 
+function added {
+    awk '/^+/ {print $0}'
+}
+function modified {
+    awk '/^M/ {print $0}'
+}
+function added_and_modified {
+    pee added modified
+}
+function removed {
+    awk '/^-/ {print $0}'
+}
+
+
 function expand_exclude_patterns {
     # If $exclude_patterns is non-empty, return a string of
     # "--exclude=PATTERN" for each pattern.
@@ -156,6 +170,22 @@ function check {
 function diff {
     log "DIFFING..."
 
+    # Choose output filter
+    filter=cat
+    if [[ $added && $removed ]]
+    then
+        filter=added_and_removed
+    elif [[ $added ]]
+    then
+        filter=added
+    elif [[ $modified ]]
+    then
+        filter=modified
+    elif [[ $removed ]]
+    then
+        filter=removed
+    fi
+
     # Get any given snapshot IDs.  This means that the diff command can't be given before other commands.
     local command diff_args found
     local commands=(${commands[@]})
@@ -195,7 +225,7 @@ function diff {
 
     log "Diff from $snapshot1 to $snapshot2"
 
-    restic diff $snapshot1 $snapshot2
+    restic diff $snapshot1 $snapshot2 | $filter
 }
 
 function forget {
@@ -213,7 +243,7 @@ function init {
 
 # * Args
 
-args=$(getopt -n "$0" -o dh -l debug,repo:,set:,tag:,help -- "$@") || exit 1
+args=$(getopt -n "$0" -o dh -l debug,repo:,set:,tag:,help,added,modified,removed -- "$@") || exit 1
 eval set -- "$args"
 
 while true
@@ -240,6 +270,15 @@ do
             # Backup tag
             shift
             tag=$1
+            ;;
+        --added)
+            added=true
+            ;;
+        --modified)
+            modified=true
+            ;;
+        --removed)
+            removed=true
             ;;
         --)
             # Remaining args
