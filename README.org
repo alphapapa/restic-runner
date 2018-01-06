@@ -1,0 +1,160 @@
+* restic-runner
+
+=restic-runner= is a helper script for using [[https://github.com/restic/restic][restic]].  It makes it easy to configure backup repositories and data sets, and to operate on them.
+
+** Installation
+
+1.  Put the =restic-runner= script in your =PATH=.
+2.  Make the directory =~/.config/backup/restic= (or a path of your choosing after changing the =config_dir= default variable in the script).
+
+** Configuration
+
+All configuration files are actually Bash scripts, which are sourced by =restic-runner=.
+
+*** Repositories
+
+To configure a backup repository, put a file at =~/.config/backup/restic/repos/REPONAME=.  It should *export* these variables:
+
++ =RESTIC_REPOSITORY=: The path to the repository root
++ =RESTIC_PASSWORD_FILE= (path to a file containing the plain-text password for the repo) or =RESTIC_PASSWORD= (the password for the repo in plain-text)
+
+It may also *define* these variables:
+
++  =keep_policy=: A Bash array containing a list of =--keep-X= options.
+
+*Example:*
+
+#+BEGIN_EXAMPLE
+export RESTIC_REPOSITORY=/mnt/backup/restic/REPONAME
+export RESTIC_PASSWORD_FILE=$RESTIC_REPOSITORY/password_file
+
+keep_policy=(
+    --keep-last 2
+    --keep-daily 7
+    --keep-weekly 8
+    --keep-monthly 12
+    --keep-yearly 10
+)
+#+END_EXAMPLE
+
+*** Data sets
+
+To configure a backup data set, put a file at =~/.config/backup/restic/sets/SETNAME=.  It should *define* these variables:
+
++  =tag=: The tag to apply to the data set in Restic.
++  =include_paths=: A Bash array of paths to include in the backup.  Unquoted paths will be expanded by Bash, so you can use =~= for your home directory.  Remember to quote paths (or parts of paths) containing spaces!  Unquoted globs will also be expanded by the shell, which you almost certainly never want, so /you should always quote glob patterns/.
++  =exclude_patterns=: A Bash array of patterns to exclude from the backup.  The same rules about quoting and shell expansion apply: paths can be unquoted (except for ones containing spaces), and patterns should be quoted.
+
+*Example:*
+
+#+BEGIN_EXAMPLE
+tag=main
+
+include_paths=(
+    # This comment is ignored by Bash, so you can comment your configuration freely.
+    ~/src
+    ~/"Important Files"  # Quote the part of the path containing a space, but leave the ~ unquoted so Bash will expand it
+)
+
+exclude_patterns=(
+    # Backup files
+    "*~"
+    "*.bak"
+    /**/.backup
+
+    # Temp files
+    "/#*#"
+    "/.#*"
+
+    # Misc
+    ~/tmp
+)
+#+END_EXAMPLE
+
+** Usage
+
+Run =restic-runner= with these options:
+
++  =--repo REPONAME=: Use the name of the repo file you configured.
++  =--set SETNAME=: Use the name of the data set file you configured.
+
+After each command, a log is displayed giving the duration, current repo size, and change in repo size:
+
+#+BEGIN_EXAMPLE
+  LOG (2018-01-06 00:09:57-06:00): backup finished.  Duration: 7m31s  Repo size: 50.341 GB (+1.576 GB)
+#+END_EXAMPLE
+
+Combined with the =diff= command and the =--added= filter, this makes it easy to find out why your repo suddenly increased in size.
+
+These commands are available:
+
+*** =backup=
+
+Runs a backup.  By default it calls Restic with these options:
+
++  =--one-file-system=
++  =--exclude-caches=
++  =--exclude-if-present .nobackup=
+
+*Example:*
+
+#+BEGIN_EXAMPLE
+  restic-runner --repo REPONAME --set SETNAME backup
+#+END_EXAMPLE
+
+*** =check=
+
+Runs =restic check= on the repo.  The =--set= option may be omitted, since it is meaningless for this command.
+
+*Example:*
+
+#+BEGIN_EXAMPLE
+  restic-runner --repo REPONAME check
+#+END_EXAMPLE
+
+*** =diff [SNAPSHOT1] [SNAPSHOT2]=
+
+Shows the diff between two snapshots.  One or more snapshot IDs may optionally be specified.  If none are given, the latest snapshot is compared with the one before it.  If one is given, it is compared with the latest.
+
+These options may be specified (before the command):
+
++  =--added=  Show only added paths
++  =--modified=  Show only modified paths
++  =--removed=  Show only removed paths
+
+=--added= and =--modified= may be used together.
+
+*Example:*
+
+#+BEGIN_EXAMPLE
+  # Shows the diff between snapshot abcd1234 and the latest one
+  restic-runner --repo REPONAME --added --modified diff abcd1234
+#+END_EXAMPLE
+
+*** =forget=
+
+Forget *and prune* snapshots.
+
+*Example:*
+
+#+BEGIN_EXAMPLE
+  restic-runner --repo REPONAME forget
+#+END_EXAMPLE
+
+*** =init=
+
+Initialize the configured repo.
+
+*Example:*
+
+#+BEGIN_EXAMPLE
+  restic-runner --repo REPONAME init
+#+END_EXAMPLE
+
+** Tips
+
++  When running in a cron job, use the =chronic= utility from [[https://joeyh.name/code/moreutils/][moreutils]], which only sends output if the job exits with non-zero status.  (However, this means you'll only receive the log if an error occurs, so it won't be as easy to notice if your repo suddenly grows due to unintentionally backing up some files.)
+
+** License
+
+GPLv3
