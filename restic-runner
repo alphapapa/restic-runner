@@ -84,7 +84,8 @@ function expand_exclude_patterns {
     then
         for pattern in "${exclude_patterns[@]}"
         do
-            result="$result --exclude=$pattern"
+            # NOTE: The pattern must be quoted again here!  It's shell expansions everywhere!
+            result="$result --exclude=\"$pattern\""
         done
         echo "$result"
     else
