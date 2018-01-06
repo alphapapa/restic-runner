@@ -172,6 +172,9 @@ function diff {
 
     # Choose output filter
     # TODO: Make this more flexible, so any combination may be used.
+
+    # TODO: Process options given after the "diff" command instead of
+    # before it.  I think that will be easier.
     filter=cat
     if [[ $added && $removed ]]
     then
