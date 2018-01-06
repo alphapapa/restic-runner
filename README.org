@@ -86,9 +86,9 @@ After each command, a log is displayed giving the duration, current repo size, a
 
 Combined with the =diff= command and the =--added= filter, this makes it easy to find out why your repo suddenly increased in size.
 
-These commands are available:
+*** Commands
 
-*** =backup=
+**** =backup=
 
 Runs a backup.  By default it calls Restic with these options:
 
@@ -102,7 +102,7 @@ Runs a backup.  By default it calls Restic with these options:
   restic-runner --repo REPONAME --set SETNAME backup
 #+END_EXAMPLE
 
-*** =check=
+**** =check=
 
 Runs =restic check= on the repo.  The =--set= option may be omitted, since it is meaningless for this command.
 
@@ -112,7 +112,7 @@ Runs =restic check= on the repo.  The =--set= option may be omitted, since it is
   restic-runner --repo REPONAME check
 #+END_EXAMPLE
 
-*** =diff [SNAPSHOT1] [SNAPSHOT2]=
+**** =diff [SNAPSHOT1] [SNAPSHOT2]=
 
 Shows the diff between two snapshots.  One or more snapshot IDs may optionally be specified.  If none are given, the latest snapshot is compared with the one before it.  If one is given, it is compared with the latest.
 
@@ -131,7 +131,7 @@ These options may be specified (before the command):
   restic-runner --repo REPONAME --added --modified diff abcd1234
 #+END_EXAMPLE
 
-*** =forget=
+**** =forget=
 
 Forget *and prune* snapshots according to the configured policy.
 
@@ -141,7 +141,7 @@ Forget *and prune* snapshots according to the configured policy.
   restic-runner --repo REPONAME forget
 #+END_EXAMPLE
 
-*** =init=
+**** =init=
 
 Initialize the configured repo.
 
@@ -151,7 +151,7 @@ Initialize the configured repo.
   restic-runner --repo REPONAME init
 #+END_EXAMPLE
 
-*** =snapshot-ids=
+**** =snapshot-ids=
 
 Print a list of snapshot IDs, one per line.
 
