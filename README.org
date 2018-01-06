@@ -22,7 +22,7 @@ It may also *define* these variables:
 
 +  =keep_policy=: A Bash array containing a list of =--keep-X= options.
 
-*Example:*
+Example:
 
 #+BEGIN_SRC sh
   export RESTIC_REPOSITORY=/mnt/backup/restic/REPONAME
@@ -45,7 +45,7 @@ To configure a backup data set, put a file at =~/.config/backup/restic/sets/SETN
 +  =include_paths=: A Bash array of paths to include in the backup.  Unquoted paths will be expanded by Bash, so you can use =~= for your home directory.  Remember to quote paths (or parts of paths) containing spaces!  Unquoted globs will also be expanded by the shell, which you almost certainly never want, so /you should always quote glob patterns/.
 +  =exclude_patterns=: A Bash array of patterns to exclude from the backup.  The same rules about quoting and shell expansion apply: paths can be unquoted (except for ones containing spaces), and patterns should be quoted.
 
-*Example:*
+Example:
 
 #+BEGIN_SRC sh
   tag=main
@@ -96,7 +96,7 @@ Runs a backup.  By default it calls Restic with these options:
 +  =--exclude-caches=
 +  =--exclude-if-present .nobackup=
 
-*Example:*
+Example:
 
 #+BEGIN_EXAMPLE
   restic-runner --repo REPONAME --set SETNAME backup
@@ -106,7 +106,7 @@ Runs a backup.  By default it calls Restic with these options:
 
 Runs =restic check= on the repo.  The =--set= option may be omitted, since it is meaningless for this command.
 
-*Example:*
+Example:
 
 #+BEGIN_EXAMPLE
   restic-runner --repo REPONAME check
@@ -124,7 +124,7 @@ These options may be specified (before the command):
 
 =--added= and =--modified= may be used together.
 
-*Example:*
+Example:
 
 #+BEGIN_EXAMPLE
   # Shows the diff between snapshot abcd1234 and the latest one
@@ -135,7 +135,7 @@ These options may be specified (before the command):
 
 Forget *and prune* snapshots according to the configured policy.
 
-*Example:*
+Example:
 
 #+BEGIN_EXAMPLE
   restic-runner --repo REPONAME forget
@@ -145,7 +145,7 @@ Forget *and prune* snapshots according to the configured policy.
 
 Initialize the configured repo.
 
-*Example:*
+Example:
 
 #+BEGIN_EXAMPLE
   restic-runner --repo REPONAME init
@@ -155,7 +155,7 @@ Initialize the configured repo.
 
 Print a list of snapshot IDs, one per line.
 
-*Example:*
+Example:
 
 #+BEGIN_EXAMPLE
   # Print all snapshot IDs for the repo
