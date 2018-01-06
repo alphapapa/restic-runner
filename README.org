@@ -112,6 +112,17 @@ Example:
   restic-runner --repo REPONAME check
 #+END_EXAMPLE
 
+**** =command COMMAND-STRING=
+
+Pass the specified command through to =restic=.  This is useful for commands that do not have an equivalent in =restic-runner=.
+
+Example:
+
+#+BEGIN_EXAMPLE
+  # Forget specific snapshots
+  restic-runner --repo REPONAME command forget abcd1234 deadbeef
+#+END_EXAMPLE
+
 **** =diff [SNAPSHOT1] [SNAPSHOT2]=
 
 Shows the diff between two snapshots.  One or more snapshot IDs may optionally be specified.  If none are given, the latest snapshot is compared with the one before it.  If one is given, it is compared with the latest.
@@ -133,7 +144,7 @@ Example:
 
 **** =forget=
 
-Forget *and prune* snapshots according to the configured policy.
+Automatically forget *and prune* snapshots according to the configured policy.  Note: the underlying =restic= command =forget= can be accessed with the =command= command (well that's not confusing at all).
 
 Example:
 

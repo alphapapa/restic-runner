@@ -188,32 +188,19 @@ function diff {
         filter=removed
     fi
 
-    # Get any given snapshot IDs.  This means that the diff command can't be given before other commands.
-    local command diff_args found
-    for command in "${commands[@]}"
-    do
-        if [[ $found ]]
-        then
-            diff_args="$diff_args $command"
-        elif [[ $command = diff ]]
-        then
-            found=true
-        fi
-    done
-
     # Choose snapshot IDs
-    if [[ ${diff_args[0]} && ${diff_args[1]} ]]
+    if [[ ${rest[0]} && ${rest[1]} ]]
     then
         debug "Using given snapshots"
 
-        snapshot1=${diff_args[0]}
-        snapshot2=${diff_args[1]}
-    elif [[ ${diff_args[0]} ]]
+        snapshot1=${rest[0]}
+        snapshot2=${rest[1]}
+    elif [[ ${rest[0]} ]]
     then
-        debug "Using latest snapshot and ${diff_args[0]}"
+        debug "Using latest snapshot and ${rest[0]}"
 
         snapshots=($(snapshot-ids))
-        snapshot1=${diff_args[0]}
+        snapshot1=${rest[0]}
         snapshot2=${snapshots[$(( ${#snapshots[@]} - 1))]}  # Latest
     else
         debug "Using latest two snapshots"
@@ -236,6 +223,13 @@ function forget {
     restic forget \
            --tag "$tag" \
            --prune ${keep_policy[@]}
+}
+function passthrough {
+    # Pass command through to restic.
+    debug "Running: restic ${rest[@]}"
+
+    # NOTE: Not sure if that should be quoted.
+    restic "${rest[@]}"
 }
 function init {
     log "INITIALIZING..."
@@ -285,7 +279,9 @@ do
         --)
             # Remaining args
             shift
-            commands=("$@")
+            command="$1"
+            shift
+            rest=("$@")
             break
             ;;
     esac
@@ -294,11 +290,12 @@ do
 done
 
 debug "ARGS: $args"
-debug "Commands: ${commands[@]}"
+debug "Command: $command"
+debug "Rest: ${rest[@]}"
 
 # ** Verify required arguments
 
-[[ ${commands[@]} ]] || die "No command specified (one or more of: backup, check, forget)"
+[[ $command ]] || die "No command specified"
 
 # The set isn't required for, e.g. check, and restic will give its own
 # error if necessary, so we can skip these checks for now.
@@ -320,44 +317,42 @@ source $config_dir/sets/$set # || die "Can't source set file: $config_dir/sets/$
 
 # * Main
 
-# Run command functions
-for command in ${commands[@]}
-do
-    # Verify command
-    if ! type $command &>/dev/null
-    then
-        # FIXME: If a snapshot ID is given to the diff command, this will give an error.
-        error "No such command: $command"
-        continue
-    fi
+# Forward "command" to "passthrough"
+[[ $command = command ]] && command=passthrough
 
-    # Log before command
-    # TODO: Make du optional (might be slow and unwanted for some)
-    du_before=$(repo_du)
-    date_before=$(date)
+# Verify command
+if ! type $command &>/dev/null
+then
+    # FIXME: If a snapshot ID is given to the diff command, this will give an error.
+    error "No such command: $command"
+    continue
+fi
 
-    # Run command (backup, forget, prune, etc.)
-    $command || die "$command failed."
+# Log before command
+# TODO: Make du optional (might be slow and unwanted for some)
+du_before=$(repo_du)
+date_before=$(date)
 
-    # Log after command
-    du_after=$(repo_du)
-    date_after=$(date)
+# Run command (backup, forget, prune, etc.)
+$command || die "$command failed."
 
-    # Compute and log difference (converting bytes to MB or GB)
-    du_difference_human=$(human_bytes $(( $du_after - $du_before )))
-    du_after_human=$(human_bytes $du_after)
-    if [[ $(($du_after - $du_before)) -gt -1 ]]
-    then
-        plus_minus="+"
-    else
-        plus_minus="-"
-    fi
+# Log after command
+du_after=$(repo_du)
+date_after=$(date)
 
-    duration=$(human_duration "$date_before" "$date_after")
+# Compute and log difference (converting bytes to MB or GB)
+du_difference_human=$(human_bytes $(( $du_after - $du_before )))
+du_after_human=$(human_bytes $du_after)
+if [[ $(($du_after - $du_before)) -gt -1 ]]
+then
+    plus_minus="+"
+else
+    plus_minus="-"
+fi
 
-    log "$command finished.  Duration: $duration  Repo size: $du_after_human (${plus_minus}${du_difference_human})"
+duration=$(human_duration "$date_before" "$date_after")
 
-done
+log "$command finished.  Duration: $duration  Repo size: $du_after_human (${plus_minus}${du_difference_human})"
 
 # Exit with number of errors, which is perfect for chronic.
 exit $errors
