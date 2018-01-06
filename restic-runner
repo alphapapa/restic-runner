@@ -250,7 +250,7 @@ do
 
     duration=$(human_duration "$date_before" "$date_after")
 
-    log "$command finished.  Duration: $duration  Repo size: $du_after_human (${plus_minus}${du_difference_human}"
+    log "$command finished.  Duration: $duration  Repo size: $du_after_human (${plus_minus}${du_difference_human})"
 
 done
 
