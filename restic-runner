@@ -84,6 +84,16 @@ function repo_du {
     du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
 }
 
+function snapshot_ids {
+    # Return list of snapshot IDs
+
+    restic snapshots \
+           --tag "$tag" \
+        | head -n -2 \
+        | tail -n +3 \
+        | awk '/^[^ ]/ { print $1 }'
+}
+
 function human_bytes {
     # Return bytes ($1) converted to MB, or GB with 3 decimal places,
     # as appropriate.
@@ -143,6 +153,51 @@ function check {
 
     restic check
 }
+function diff {
+    log "DIFFING..."
+
+    # Get any given snapshot IDs.  This means that the diff command can't be given before other commands.
+    local command diff_args found
+    local commands=(${commands[@]})
+    for command in "${commands[@]}"
+    do
+        if [[ $found ]]
+        then
+            diff_args="$diff_args $command"
+        elif [[ $command = diff ]]
+        then
+            found=true
+        fi
+    done
+
+    # Choose snapshot IDs
+    if [[ ${diff_args[0]} && ${diff_args[1]} ]]
+    then
+        debug "Using given snapshots"
+
+        snapshot1=${diff_args[0]}
+        snapshot2=${diff_args[1]}
+    elif [[ ${diff_args[0]} ]]
+    then
+        debug "Using latest snapshot and ${diff_args[0]}"
+
+        snapshots=($(snapshot_ids))
+        snapshot1=${diff_args[0]}
+        snapshot2=${snapshots[$(( ${#snapshots[@]} - 1))]}  # Latest
+    else
+        debug "Using latest two snapshots"
+
+        snapshots=($(snapshot_ids))
+        num=${#snapshots[@]}
+        snapshot1=${snapshots[$((num - 2))]}
+        snapshot2=${snapshots[$((num - 1))]}
+    fi
+
+    log "Diff from $snapshot1 to $snapshot2"
+
+    restic diff $snapshot1 $snapshot2
+}
+
 function forget {
     log "FORGETTING AND PRUNING..."
 
@@ -227,6 +282,14 @@ source $config_dir/sets/$set # || die "Can't source set file: $config_dir/sets/$
 # Run command functions
 for command in ${commands[@]}
 do
+    # Verify command
+    if ! type $command &>/dev/null
+    then
+        # FIXME: If a snapshot ID is given to the diff command, this will give an error.
+        error "No such command: $command"
+        continue
+    fi
+
     # Log before command
     du_before=$(repo_du)
     date_before=$(date)
