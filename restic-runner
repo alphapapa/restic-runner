@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# restic-runner
-# http://github.com/alphapapa/restic-runner
+# restic-runner <http://github.com/alphapapa/restic-runner>
 
 # * Instructions
 
@@ -71,7 +70,7 @@ function modified {
     awk '/^M/ {print $0}'
 }
 function added_and_modified {
-    pee added modified
+    pee added modified || die "Please install the moreutils package."
 }
 function removed {
     awk '/^-/ {print $0}'
