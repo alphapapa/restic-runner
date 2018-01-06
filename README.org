@@ -24,18 +24,18 @@ It may also *define* these variables:
 
 *Example:*
 
-#+BEGIN_EXAMPLE
-export RESTIC_REPOSITORY=/mnt/backup/restic/REPONAME
-export RESTIC_PASSWORD_FILE=$RESTIC_REPOSITORY/password_file
+#+BEGIN_SRC sh
+  export RESTIC_REPOSITORY=/mnt/backup/restic/REPONAME
+  export RESTIC_PASSWORD_FILE=$RESTIC_REPOSITORY/password_file
 
-keep_policy=(
-    --keep-last 2
-    --keep-daily 7
-    --keep-weekly 8
-    --keep-monthly 12
-    --keep-yearly 10
-)
-#+END_EXAMPLE
+  keep_policy=(
+      --keep-last 2
+      --keep-daily 7
+      --keep-weekly 8
+      --keep-monthly 12
+      --keep-yearly 10
+  )
+#+END_SRC
 
 *** Data sets
 
@@ -47,29 +47,29 @@ To configure a backup data set, put a file at =~/.config/backup/restic/sets/SETN
 
 *Example:*
 
-#+BEGIN_EXAMPLE
-tag=main
+#+BEGIN_SRC sh
+  tag=main
 
-include_paths=(
-    # This comment is ignored by Bash, so you can comment your configuration freely.
-    ~/src
-    ~/"Important Files"  # Quote the part of the path containing a space, but leave the ~ unquoted so Bash will expand it
-)
+  include_paths=(
+      # This comment is ignored by Bash, so you can comment your configuration freely.
+      ~/src
+      ~/"Important Files"  # Quote the part containing a space, but leave ~ unquoted so Bash will expand it
+  )
 
-exclude_patterns=(
-    # Backup files
-    "*~"
-    "*.bak"
-    /**/.backup
+  exclude_patterns=(
+      # Backup files
+      "*~"
+      "*.bak"
+      "/**/.backup"
 
-    # Temp files
-    "/#*#"
-    "/.#*"
+      # Temp files
+      "/#*#"
+      "/.#*"
 
-    # Misc
-    ~/tmp
-)
-#+END_EXAMPLE
+      # Misc
+      ~/tmp
+  )
+#+END_SRC
 
 ** Usage
 
@@ -133,7 +133,7 @@ These options may be specified (before the command):
 
 *** =forget=
 
-Forget *and prune* snapshots.
+Forget *and prune* snapshots according to the configured policy.
 
 *Example:*
 

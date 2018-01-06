@@ -171,6 +171,7 @@ function diff {
     log "DIFFING..."
 
     # Choose output filter
+    # TODO: Make this more flexible, so any combination may be used.
     filter=cat
     if [[ $added && $removed ]]
     then
@@ -231,6 +232,7 @@ function diff {
 function forget {
     log "FORGETTING AND PRUNING..."
 
+    # TODO: Make prune optional or separate.
     restic forget \
            --tag "$tag" \
            --prune ${keep_policy[@]}
@@ -330,6 +332,7 @@ do
     fi
 
     # Log before command
+    # TODO: Make du optional (might be slow and unwanted for some)
     du_before=$(repo_du)
     date_before=$(date)
 
