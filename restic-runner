@@ -60,25 +60,24 @@ function log {
     echo "LOG ($(date --rfc-3339=seconds)): $@"
 }
 
+function cleanup {
+    # Remove temporary exclude file if it exists
+    rm -f "$exclude_file"
+}
+
 # ** Helper functions
 
+function exclude_file {
+    # Return path to temp file containing exclude patterns.
 
+    exclude_file=$(tempfile) || die "Can't get tempfile"
 
-function expand_exclude_patterns {
-    # If $exclude_patterns is non-empty, return a string of
-    # "--exclude=PATTERN" for each pattern.
+    for pattern in "${exclude_patterns[@]}"
+    do
+        echo "$pattern" >>$exclude_file
+    done
 
-    if [[ ${exclude_patterns[@]} ]]
-    then
-        for pattern in "${exclude_patterns[@]}"
-        do
-            # NOTE: The pattern must be quoted again here!  It's shell expansions everywhere!
-            result="$result --exclude=\"$pattern\""
-        done
-        echo "$result"
-    else
-        return 1  # Is this correct?
-    fi
+    echo "$exclude_file"
 }
 
 function repo_du {
@@ -156,11 +155,14 @@ function removed {
 function backup {
     log "BACKING UP..."
 
+    # Cleanup exclude file on exit
+    trap cleanup EXIT INT TERM
+
     restic backup \
            --one-file-system \
            --exclude-caches \
            --exclude-if-present .nobackup \
-           $(expand_exclude_patterns) \
+           --exclude-file $(exclude_file) \
            --tag "$tag" \
            "${include_paths[@]}"
 }
