@@ -190,7 +190,6 @@ function diff {
 
     # Get any given snapshot IDs.  This means that the diff command can't be given before other commands.
     local command diff_args found
-    local commands=(${commands[@]})
     for command in "${commands[@]}"
     do
         if [[ $found ]]
