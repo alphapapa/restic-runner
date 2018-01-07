@@ -212,9 +212,8 @@ function diff {
         debug "Using latest two snapshots"
 
         snapshots=($(snapshot-ids))
-        num=${#snapshots[@]}
-        snapshot1=${snapshots[$((num - 2))]}
-        snapshot2=${snapshots[$((num - 1))]}
+        snapshot1=${snapshots[-2]}
+        snapshot2=${snapshots[-1]}
     fi
 
     log "Diff from $snapshot1 to $snapshot2"
