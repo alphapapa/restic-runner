@@ -333,15 +333,15 @@ fi
 
 # Log before command
 # TODO: Make du optional (might be slow and unwanted for some)
-du_before=$(repo_du)
 date_before=$(date)
+du_before=$(repo_du)
 
 # Run command (backup, forget, prune, etc.)
 $command || die "$command failed."
 
 # Log after command
-du_after=$(repo_du)
 date_after=$(date)
+du_after=$(repo_du)
 
 # Compute and log difference (converting bytes to MB or GB)
 du_difference_human=$(human_bytes $(( $du_after - $du_before )))
