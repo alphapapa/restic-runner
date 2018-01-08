@@ -324,12 +324,8 @@ source $config_dir/sets/$set # || die "Can't source set file: $config_dir/sets/$
 [[ $command = command ]] && command=passthrough
 
 # Verify command
-if ! type $command &>/dev/null
-then
-    # FIXME: If a snapshot ID is given to the diff command, this will give an error.
-    error "No such command: $command"
-    continue
-fi
+# FIXME: If a snapshot ID is given to the diff command, this will give an error.
+type $command &>/dev/null || die "No such command: $command"
 
 # Log before command
 # TODO: Make du optional (might be slow and unwanted for some)
