@@ -137,6 +137,8 @@ function human_duration {
 
 # *** diff helpers
 
+# TODO: Use a --filter option with multiple arguments
+
 function added {
     awk '/^+/ {print $0}'
 }
