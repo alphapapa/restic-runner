@@ -62,7 +62,7 @@ function log {
 
 function cleanup {
     # Remove temporary exclude file if it exists
-    rm -f "$exclude_file"
+    [[ "$exclude_file" ]] && rm -f "$exclude_file"
 }
 
 # ** Helper functions
