@@ -139,6 +139,22 @@ function human_duration {
     echo "$time"
 }
 
+function diff_bytes {
+    # Return humanized difference between two byte counts, i.e. (($1 - $2)).
+
+    local difference=$(( $1 - $2 ))
+    local human=$(human_bytes $difference)
+
+    if [[ $difference -gt -1 ]]
+    then
+        local plus_minus="+"
+    else
+        local plus_minus="-"
+    fi
+
+    echo "${plus_minus}${human}"
+}
+
 # *** diff helpers
 
 # TODO: Use a --filter option with multiple arguments
@@ -348,18 +364,12 @@ du_after=$(repo_du)
 date_after=$(date)
 
 # Compute and log difference (converting bytes to MB or GB)
-du_difference_human=$(human_bytes $(( $du_after - $du_before )))
+du_difference_human=$(diff_bytes $du_after $du_before)
 du_after_human=$(human_bytes $du_after)
-if [[ $(($du_after - $du_before)) -gt -1 ]]
-then
-    plus_minus="+"
-else
-    plus_minus="-"
-fi
 
 duration=$(human_duration "$date_before" "$date_after")
 
-log "$command finished.  Duration: $duration  Repo size: $du_after_human (${plus_minus}${du_difference_human})"
+log "$command finished.  Duration: $duration  Repo size: $du_after_human (${du_difference_human})"
 
 # Exit with number of errors, which is perfect for chronic.
 exit $errors
