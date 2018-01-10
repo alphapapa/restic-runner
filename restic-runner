@@ -2,6 +2,10 @@
 
 # restic-runner <http://github.com/alphapapa/restic-runner>
 
+# * Notes
+
+# ** TODO Make du optional (might be slow and unwanted for some)
+
 # * Instructions
 
 # Repository config files should specify these variables:
@@ -329,8 +333,10 @@ source $config_dir/sets/$set # || die "Can't source set file: $config_dir/sets/$
 # FIXME: If a snapshot ID is given to the diff command, this will give an error.
 type $command &>/dev/null || die "No such command: $command"
 
-# Log before command
-# TODO: Make du optional (might be slow and unwanted for some)
+# Log before command.  NOTE: The recorded duration includes running
+# du.  Restic outputs its own duration, so there's no reason to
+# duplicate that, but it might be useful to know how much extra time
+# is taken by running du before and after.
 date_before=$(date)
 du_before=$(repo_du)
 
