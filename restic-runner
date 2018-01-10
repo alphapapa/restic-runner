@@ -338,8 +338,8 @@ du_before=$(repo_du)
 $command || die "$command failed."
 
 # Log after command
-date_after=$(date)
 du_after=$(repo_du)
+date_after=$(date)
 
 # Compute and log difference (converting bytes to MB or GB)
 du_difference_human=$(human_bytes $(( $du_after - $du_before )))
