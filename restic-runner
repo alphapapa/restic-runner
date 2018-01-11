@@ -328,21 +328,12 @@ debug "Rest: ${rest[@]}"
 
 [[ $command ]] || die "No command specified"
 
-# The set isn't required for, e.g. check, and restic will give its own
-# error if necessary, so we can skip these checks for now.
-
-#  [[ $repo ]] || die "No repo specified"
-#  [[ $set ]] || die "No backup set specified"
-
 # * Include repo and set files
-
-# The set isn't required for, e.g. check, and restic will give its own
-# error if necessary, so we can skip these checks for now.
 
 # TODO: Disable glob expansion around these.
 
-source $config_dir/repos/$repo || die "Can't source repo file: $config_dir/repos/$repo"
-source $config_dir/sets/$set   || die "Can't source set file: $config_dir/sets/$set"
+[[ $repo ]] && source $config_dir/repos/$repo || die "Can't source repo file: $config_dir/repos/$repo"
+[[ $set ]] && source $config_dir/sets/$set || die "Can't source set file: $config_dir/sets/$set"
 
 # * Main
 
