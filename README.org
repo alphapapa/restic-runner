@@ -20,6 +20,7 @@ To configure a backup repository, put a file at =~/.config/backup/restic/repos/R
 
 It may also *define* these variables:
 
++  =du=: Set to =true= to report the repo size and difference after running a Restic command.  This should only be enabled for local repos (e.g. not SFTP ones).
 +  =keep_policy=: A Bash array containing a list of =--keep-X= options.
 
 Example:
@@ -27,6 +28,8 @@ Example:
 #+BEGIN_SRC sh
   export RESTIC_REPOSITORY=/mnt/backup/restic/REPONAME
   export RESTIC_PASSWORD_FILE=$RESTIC_REPOSITORY/password_file
+
+  du=true
 
   keep_policy=(
       --keep-last 2

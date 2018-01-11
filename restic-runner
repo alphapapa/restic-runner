@@ -88,6 +88,10 @@ function repo_du {
     du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
 }
 
+function du_enabled {
+    [[ $du = true ]]
+}
+
 function snapshot-ids {
     # Return list of snapshot IDs
 
@@ -354,22 +358,25 @@ type $command &>/dev/null || die "No such command: $command"
 # duplicate that, but it might be useful to know how much extra time
 # is taken by running du before and after.
 date_before=$(date)
-du_before=$(repo_du)
+du_enabled && du_before=$(repo_du)
 
 # Run command (backup, forget, prune, etc.)
 $command || die "$command failed."
 
 # Log after command
-du_after=$(repo_du)
+du_enabled && du_after=$(repo_du)
 date_after=$(date)
-
-# Compute and log difference (converting bytes to MB or GB)
-du_difference_human=$(diff_bytes $du_after $du_before)
-du_after_human=$(human_bytes $du_after)
-
 duration=$(human_duration "$date_before" "$date_after")
 
-log "$command finished.  Duration: $duration  Repo size: $du_after_human (${du_difference_human})"
+if du_enabled
+then
+    # Compute and log difference (converting bytes to MB or GB)
+    du_after_human=$(human_bytes $du_after)
+    du_difference_human=$(diff_bytes $du_after $du_before)
+    du_message="Repo size: $du_after_human (${du_difference_human})"
+fi
+
+log "$command finished.  Duration: $duration  ${du_message}"
 
 # Exit with number of errors, which is perfect for chronic.
 exit $errors
