@@ -332,8 +332,16 @@ debug "Rest: ${rest[@]}"
 
 # TODO: Disable glob expansion around these.
 
-[[ $repo ]] && source $config_dir/repos/$repo || die "Can't source repo file: $config_dir/repos/$repo"
-[[ $set ]] && source $config_dir/sets/$set || die "Can't source set file: $config_dir/sets/$set"
+if [[ $repo ]]
+then
+    source $config_dir/repos/$repo \
+        || die "Can't source repo file: $config_dir/repos/$repo"
+fi
+if [[ $set ]]
+then
+    source $config_dir/sets/$set \
+        || die "Can't source set file: $config_dir/sets/$set"
+fi
 
 # * Main
 
