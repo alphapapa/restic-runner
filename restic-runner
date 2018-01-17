@@ -61,7 +61,7 @@ Options
 EOF
 }
 function log {
-    echo "LOG ($(date --rfc-3339=seconds)): $@"
+    echo "LOG ($(date --rfc-3339=seconds)): $@" >&2
 }
 
 function cleanup {
