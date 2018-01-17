@@ -247,7 +247,7 @@ function diff {
     restic diff $snapshot1 $snapshot2 | $filter
 }
 
-function forget {
+function expire {
     log "FORGETTING AND PRUNING..."
 
     # TODO: Make prune optional or separate.

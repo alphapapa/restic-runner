@@ -145,14 +145,14 @@ Example:
   restic-runner --repo REPONAME --added --modified diff abcd1234
 #+END_EXAMPLE
 
-**** =forget=
+**** =expire=
 
-Automatically forget *and prune* snapshots according to the configured policy.  Note: the underlying =restic= command =forget= can be accessed with the =command= command (well that's not confusing at all).
+Automatically forget *and prune* snapshots according to the configured policy.
 
 Example:
 
 #+BEGIN_EXAMPLE
-  restic-runner --repo REPONAME forget
+  restic-runner --repo REPONAME expire
 #+END_EXAMPLE
 
 **** =init=
