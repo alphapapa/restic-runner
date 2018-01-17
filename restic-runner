@@ -107,6 +107,9 @@ function human_bytes {
     # as appropriate.
     local bytes=$1
 
+    # Remove initial "-" for negative numbers
+    bytes=${bytes/-/}
+
     if [[ $bytes -ge $(( 1024 ** 3 )) ]]
     then
         local suffix=GB
