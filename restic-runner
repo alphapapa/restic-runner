@@ -241,6 +241,13 @@ function diff {
         debug "Using latest two snapshots"
 
         snapshots=($(snapshot-ids))
+
+        # Ensure there are two snapshots
+        if [[ ${#snapshots[@]} -lt 2 ]]
+        then
+            die "Only one snapshot ID found: ${snapshots[@]}"
+        fi
+
         snapshot1=${snapshots[-2]}
         snapshot2=${snapshots[-1]}
     fi
