@@ -147,6 +147,13 @@ function human_duration {
 function diff_bytes {
     # Return humanized difference between two byte counts, i.e. (($1 - $2)).
 
+    # Ensure both arguments are passed
+    if ! [[ $1 && $2 ]]
+    then
+        error "Only one argument passed to diff_bytes."
+        return 1
+    fi
+
     local difference=$(( $1 - $2 ))
     local human=$(human_bytes $difference)
 
