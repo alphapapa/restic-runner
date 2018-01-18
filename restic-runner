@@ -1,24 +1,22 @@
 #!/bin/bash
 
-# restic-runner <http://github.com/alphapapa/restic-runner>
-
-# * Notes
-
-# ** TODO Make du optional (might be slow and unwanted for some)
+# restic-runner
+# <http://github.com/alphapapa/restic-runner>
 
 # * Instructions
 
 # Repository config files should specify these variables:
 
-# $RESTIC_REPOSITORY: Path to repository
-# $RESTIC_PASSWORD_FILE: Path to password file
+# RESTIC_REPOSITORY: Path to repository
+# RESTIC_PASSWORD_FILE: Path to password file
+# du: If "true", a disk usage report will be generated (default: false).
 
 # Backup set config files should specify these variables:
 
-# $tag: Tag string for backup set.
-# $include_paths: An array of strings, each of which is a path to backup.
-# $exclude_patterns: An array of strings, each of which is an exclude glob pattern.
-# $keep_policy: An array of "--keep-period N" strings (unquoted in the array)
+# tag: Tag string for backup set.
+# include_paths: An array of strings, each of which is a path to backup.
+# exclude_patterns: An array of strings, each of which is an exclude glob pattern.
+# keep_policy: An array of "--keep-period N" strings (unquoted in the array)
 
 # * Defaults
 
