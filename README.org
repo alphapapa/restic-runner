@@ -132,6 +132,17 @@ Example:
   restic-runner --repo REPONAME command forget abcd1234 deadbeef
 #+END_EXAMPLE
 
+*Note:* To avoid further processing of options that are valid for both =restic= and =restic-runner=, use =--=, like:
+
+#+BEGIN_EXAMPLE
+  # Prevent "--tag main" from being processed by restic-runner; instead, pass it to restic
+  restic-runner --repo REPONAME -- command snapshots --tag main
+#+END_EXAMPLE
+
+Which results in running =restic snapshots --tag main=.
+
+If unsure, you can use =restic-runner --debug= to see how arguments are parsed.
+
 **** =diff [SNAPSHOT1] [SNAPSHOT2]=
 
 Shows the diff between two snapshots.  One or more snapshot IDs may optionally be specified.  If none are given, the latest snapshot is compared with the one before it.  If one is given, it is compared with the latest.
