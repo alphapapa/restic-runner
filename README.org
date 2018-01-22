@@ -9,7 +9,7 @@
 
 ** Configuration
 
-All configuration files are actually Bash scripts, which are sourced by =restic-runner=.
+All configuration files are actually Bash scripts, which are sourced by =restic-runner=.  Therefore, the following configuration instructions are actually just a convention.  That means that any of the variables mentioned may actually be specified in either repository or set configuration files, or both (e.g. when using Bash arrays, both files could add to an array by using =array_var+=(element1 element2)= syntax).  Obviously, if a variable is /set/ in both files (as opposed to being appended to), the resulting behavior should be considered undefined (i.e. don't rely on the order in which the files are sourced; keep it simple).
 
 *** Repositories
 
