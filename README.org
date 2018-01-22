@@ -47,6 +47,7 @@ To configure a backup data set, put a file at =~/.config/backup/restic/sets/SETN
 +  =tag=: The tag to apply to the data set in Restic.
 +  =include_paths=: A Bash array of paths to include in the backup.  Unquoted paths will be expanded by Bash, so you can use =~= for your home directory.  Remember to quote paths (or parts of paths) containing spaces!  Unquoted globs will also be expanded by the shell, which you almost certainly never want, so /you should always quote glob patterns/.
 +  =exclude_patterns=: A Bash array of patterns to exclude from the backup.  The same rules about quoting and shell expansion apply: paths can be unquoted (except for ones containing spaces), and patterns should be quoted.
++  =exclude_if_present=: A Bash array of filenames to pass to Restic using the =--exclude-if-present= option.
 
 Example:
 
@@ -57,6 +58,12 @@ Example:
       # This comment is ignored by Bash, so you can comment your configuration freely.
       ~/src
       ~/"Important Files"  # Quote the part containing a space, but leave ~ unquoted so Bash will expand it
+  )
+
+  exclude_if_present+=(
+      # Using += instead of = so this can also be set by repo config files.
+      .nobackup
+      .resticignore
   )
 
   exclude_patterns=(
@@ -97,7 +104,6 @@ Runs a backup.  By default it calls Restic with these options:
 
 +  =--one-file-system=
 +  =--exclude-caches=
-+  =--exclude-if-present .nobackup=
 
 Example:
 

@@ -82,6 +82,15 @@ function exclude_file {
     echo "$exclude_file"
 }
 
+function exclude_if_present {
+    # Echo "--exclude-if-present FILENAME" for each filename in ${exclude_if_present[@]}
+
+    for filename in "${exclude_if_present[@]}"
+    do
+        echo --exclude-if-present "$filename"
+    done
+}
+
 function repo_du {
     du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
 }
@@ -195,7 +204,7 @@ function backup {
     restic backup \
            --one-file-system \
            --exclude-caches \
-           --exclude-if-present .nobackup \
+           $(exclude_if_present) \
            --exclude-file $(exclude_file) \
            --tag "$tag" \
            "${include_paths[@]}"
