@@ -356,6 +356,11 @@ debug "Rest: ${rest[@]}"
 
 # TODO: Disable glob expansion around these.
 
+if [[ -f $config_dir/runner ]]
+then
+    source "$config_dir/runner" \
+        || die "Can't source global config file: $config_dir/runner"
+fi
 if [[ $repo ]]
 then
     source $config_dir/repos/$repo \

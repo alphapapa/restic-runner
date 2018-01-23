@@ -11,6 +11,12 @@
 
 All configuration files are actually Bash scripts, which are sourced by =restic-runner=.  Therefore, the following configuration instructions are actually just a convention.  That means that any of the variables mentioned may actually be specified in either repository or set configuration files, or both (e.g. when using Bash arrays, both files could add to an array by using =array_var+=(element1 element2)= syntax).  Obviously, if a variable is /set/ in both files (as opposed to being appended to), the resulting behavior should be considered undefined (i.e. don't rely on the order in which the files are sourced; keep it simple).
 
+*** Global
+
+A global configuration file may be put at =~/.config/backup/restic/runner=.  You may use it to set any variables that you might also set in the following files.  This file will be sourced first, so repo- and set-specific files will override settings in this file.
+
+This is especially useful for settings that are Bash arrays, like =exclude_patterns=, because you can use =+== syntax to add to the array in each file (or you could use regular assignment to override rather than add to).
+
 *** Repositories
 
 To configure a backup repository, put a file at =~/.config/backup/restic/repos/REPONAME=.  It should *export* these variables:
