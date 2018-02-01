@@ -383,6 +383,8 @@ fi
 
 # * Main
 
+log "REPO:$repo SET:$set"
+
 # Forward "command" to "passthrough"
 [[ $command = command ]] && command=passthrough
 
