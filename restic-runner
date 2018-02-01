@@ -99,6 +99,15 @@ function du_enabled {
     [[ $du = true ]]
 }
 
+function tag {
+    # Echo "--tag TAG" if $tag is set, otherwise nothing.
+
+    if [[ $tag ]]
+    then
+        echo "--tag $tag"
+    fi
+}
+
 function snapshot-ids {
     # Return list of snapshot IDs
 
@@ -276,7 +285,7 @@ function expire {
 
     # TODO: Make prune optional or separate.
     restic forget \
-           --tag "$tag" \
+           $(tag) \
            --prune ${keep_policy[@]}
 }
 function passthrough {
