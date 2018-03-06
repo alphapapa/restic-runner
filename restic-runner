@@ -304,7 +304,10 @@ function init {
 
 # * Args
 
-while [ "$#" -gt 0 ]
+args=$(getopt -n "$0" -o dh -l debug,repo:,set:,tag:,help,added,modified,removed -- "$@") || exit 1
+eval set -- "$args"
+
+while true
 do
     case "$1" in
         -d|--debug)
@@ -338,8 +341,9 @@ do
         --removed)
             removed=true
             ;;
-        *)
+        --)
             # Remaining args
+            shift
             command="$1"
             shift
             rest=("$@")
