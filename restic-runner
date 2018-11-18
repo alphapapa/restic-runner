@@ -51,20 +51,37 @@ function usage {
     cat <<EOF
 $0 [OPTIONS] ...?
 
-This does something cool!
+https://github.com/alphapapa/restic-runner
+
+See restic-runner's readme for more information.
 
 Options
-  -d, --debug  Print debug info
-  -h, --help   I need somebody!
+  -d, --debug    Print debug info
+  -h, --help     I need somebody!
+  -v, --verbose  Verbose output
 EOF
 }
 function log {
-    echo "LOG ($(date --rfc-3339=seconds)): $@" >&2
+    echo -e "LOG ($(date --rfc-3339=seconds)): $@" >&2
 }
 
 function cleanup {
     # Remove temporary exclude file if it exists
     [[ -f $exclude_file ]] && rm -f "$exclude_file"
+}
+
+function verbose {
+    if [[ $verbose ]]
+    then
+        function verbose {
+            echo "VERBOSE: $@" >&2
+        }
+        verbose "$@"
+    else
+        function verbose {
+            true
+        }
+    fi
 }
 
 # ** Helper functions
@@ -88,6 +105,22 @@ function exclude_if_present {
     for filename in "${exclude_if_present[@]}"
     do
         echo --exclude-if-present "$filename"
+    done
+}
+
+function echo_option_with_arg {
+    # Echo "--$1 arg1 --$1 arg2 ..." for arg in array var named $2.
+    # See <https://stackoverflow.com/a/47123753/712624>.
+
+    # MAYBE: Use this for exclude_if_present.
+
+    local array_name
+    declare -n array_name="$2"
+
+    for arg in "${array_name[@]}"
+    do
+        echo -n --$1 "\"$arg\""
+        echo -n " "
     done
 }
 
@@ -301,9 +334,105 @@ function init {
     restic init
 }
 
+function verify-randomly {
+    # Verify a number ($rest) of random files from a snapshot
+    # ($snapshot, default to latest) by restoring them to a temporary
+    # directory and checking Restic's exit status.
+
+    # MAYBE: It might be faster (or at least, use less disk space and be
+    # slightly safer) to FUSE-mount the repo and compare against it rather
+    # than restoring to a temp dir.
+
+    # Disable disk usage report for this command since the repo size
+    # doesn't change from it.
+    unset du
+
+    local num_files=${rest:-10}
+
+    # Get snapshot ID.
+    local snapshot=$snapshot
+    if ! [[ $snapshot ]] ||  [[ $snapshot = latest ]]
+    then
+        snapshot=$(snapshot-ids | tail -n1) || die "Unable to get latest snapshot ID"
+    fi
+
+    # Make temp dir.
+    local temp_restore_dir=$(mktemp -d) || die "Unable to make temp dir"
+
+    # Remove restored files when finished or aborted.
+    # NOTE: If any restored files are read-only, they will fail to be
+    # removed.  Not a big deal, since they're in a temp directory.
+    trap "rm -rf $temp_restore_dir" EXIT INT TERM
+
+    # Get paths from snapshot.
+    local paths
+    readarray -t paths < <(restic ls $snapshot | shuf -n $num_files)
+    [[ $paths ]] || die "Unable to list paths in snapshot: $snapshot"
+
+    log "VERIFYING $num_files files from snapshot $snapshot..."
+
+    # Build the command and then eval it.  This is necessary to
+    # process the "--include" options, which may include paths with
+    # spaces, which must be quoted, so the whole command must be
+    # eval'ed by Bash to separate the arguments.
+
+    # TODO: If Restic had an --include-from option that accepted a
+    # filename, it would make this easier.
+    local command="restic \
+          restore -t $temp_restore_dir \
+          $(echo_option_with_arg include paths) \
+          $snapshot"
+    eval "$command" || die "Verify failed"
+
+    if [[ $compare ]]
+    then
+        # Compare with live versions
+        log "COMPARING with live versions..."
+        for path in "${paths[@]}"
+        do
+            if [[ -d $path ]]
+            then
+                compare_dir "$path"
+            elif [[ -f $path ]]
+            then
+                compare_file "$path"
+            fi
+        done
+    fi
+}
+
+function compare_file {
+    # Compare file at path ($1) to version at $temp_restore_dir/$1.
+    local restored_file="${temp_restore_dir}${1}"
+    local live_file="$1"
+
+    verbose "Comparing file: $live_file"
+    cmp "$live_file" "$restored_file" || error "File differs: $live_file"
+}
+
+function compare_dir {
+    # Compare files in directory at path ($1) to versions at $temp_restore_dir/$1.
+    local path="$1"
+    local restored_dir="${temp_restore_dir}${path}"
+
+    # Find files in restored directory.
+    local restored_files
+    readarray -t restored_files < <(find "$restored_dir" -type f)
+    [[ $restored_files ]] || die "Unable to list files in restored directory: $restored_dir"
+
+    # Compare restored files with live versions.
+    for restored_file in "${restored_files[@]}"
+    do
+        local live_file=${restored_file#$temp_restore_dir}  # Remove temp dir from path
+
+        verbose "Comparing file: $live_file"
+        cmp "$live_file" "$restored_file" || error "File differs: $live_file"
+    done
+}
+
 # * Args
 
-args=$(getopt -n "$0" -o dh -l debug,repo:,set:,tag:,help,added,modified,removed -- "$@") || exit 1
+args=$(getopt -n "$0" -o dhv -l compare,debug,repo:,set:,snapshot:,tag:,help,added,modified,removed,verbose -- "$@") || exit 1
 eval set -- "$args"
 
 while true
@@ -316,6 +445,12 @@ do
             usage
             exit
             ;;
+        -v|--verbose)
+            verbose=true
+            ;;
+        --compare)
+            compare=true
+            ;;
         --repo)
             # Destination repo
             shift
@@ -325,6 +460,10 @@ do
             # Backup set
             shift
             set=$1
+            ;;
+        --snapshot)
+            shift
+            snapshot=$1
             ;;
         --tag)
             # Backup tag
@@ -415,7 +554,7 @@ then
     du_message="Repo size: $du_after_human (${du_difference_human})"
 fi
 
-log "$command finished.  Duration: $duration  ${du_message}"
+log "$command FINISHED.  Duration: $duration  ${du_message}"
 
 # Exit with number of errors, which is perfect for chronic.
 exit $errors

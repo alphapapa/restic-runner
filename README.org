@@ -205,6 +205,27 @@ Example:
   restic-runner --repo REPONAME --tag TAG snapshot-ids
 #+END_EXAMPLE
 
+**** =verify-randomly N=
+
+Verify =N= (default 10) random files from the latest snapshot by restoring them to a temporary directory.  The directory is removed afterward.  If =--compare= is specified, the restored files are compared with the live versions.
+
+Note that the =--set SETNAME= option may be specified to e.g. choose the latest snapshot in =SETNAME=, or omitted to e.g. choose the latest snapshot in the repo.
+
+These options may be specified:
+
++  =--compare= Compare restored files with live versions, exiting with an error if any differ.
++  =--snapshot SNAPSHOT-ID= Restore from this snapshot.
+
+Examples:
+
+#+BEGIN_EXAMPLE
+  # Verify 10 random files from the latest snapshot in set SETNAME.
+  restic-runner --repo REPONAME --set SETNAME verify-randomly
+
+  # Verify and compare 100 random files from snapshot DEADBEEF with verbose output.
+  restic-runner -v --repo REPONAME --snapshot deadbeef --compare verify-randomly 100
+#+END_EXAMPLE
+
 ** Tips
 
 +  When running in a cron job, use the =chronic= utility from [[https://joeyh.name/code/moreutils/][moreutils]], which only sends output if the job exits with non-zero status.  (However, this means you'll only receive the log if an error occurs, so it won't be as easy to notice if your repo suddenly grows due to unintentionally backing up some files.)
