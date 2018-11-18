@@ -62,7 +62,7 @@ Options
 EOF
 }
 function log {
-    echo -e "LOG ($(date --rfc-3339=seconds)): $@" >&2
+    echo -e "LOG ($(date "+%Y-%m-%d %H:%M:%S")): $@" >&2
 }
 
 function cleanup {
