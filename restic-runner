@@ -525,7 +525,7 @@ fi
 
 # * Main
 
-log "REPO:$repo SET:$set"
+log "REPO:$repo SET:$set COMMAND:$command"
 
 # Forward "command" to "passthrough"
 [[ $command = command ]] && command=passthrough
