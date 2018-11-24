@@ -144,6 +144,9 @@ function tag {
 function snapshot-ids {
     # Return list of snapshot IDs
 
+    # Disable du
+    unset du
+
     restic snapshots \
            --tag "$tag" \
         | head -n -2 \
