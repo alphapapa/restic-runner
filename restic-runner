@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # restic-runner
 # <http://github.com/alphapapa/restic-runner>
@@ -39,17 +39,20 @@ function debug {
         }
     fi
 }
+
 function error {
     echo "ERROR: $@" >&2
     ((errors++))  # Initializes automatically
 }
+
 function die {
     error "$@"
     exit $errors
 }
+
 function usage {
     cat <<EOF
-$0 [OPTIONS] ...?
+$0 [OPTIONS] <Command>
 
 https://github.com/alphapapa/restic-runner
 
@@ -59,8 +62,19 @@ Options
   -d, --debug    Print debug info
   -h, --help     I need somebody!
   -v, --verbose  Verbose output
+
+Commands
+  backup
+  check
+  command COMMAND-STRING
+  diff {SNAPSHOT1} {SNAPSHOT2}
+  expire
+  init
+  snapshot-ids
+  verify-randomly N
 EOF
 }
+
 function log {
     echo -e "LOG ($(date "+%Y-%m-%d %H:%M:%S")): $@" >&2
 }
@@ -82,6 +96,28 @@ function verbose {
             true
         }
     fi
+}
+
+function check_osx {
+    shopt -s nocasematch
+    
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        required_homebrew_pkgs=(
+            /usr/local/opt/bash/bin  # BASH 4.x
+            /usr/local/opt/gnu-getopt/bin  # GNU Getopt
+            /usr/local/opt/coreutils/libexec/gnubin  # GNU Date
+        )
+        
+        for pkg_dir in "${required_homebrew_pkgs[@]}"; do
+            if [[ ! -d "$pkg_dir" ]]; then
+                die "GNU Versions of tools required, ensure homebrew package is installed: $pkg_dir"
+            else
+                export PATH="${pkg_dir}:${PATH}"
+            fi
+        done
+    fi
+
+    shopt -u nocasematch
 }
 
 # ** Helper functions
@@ -228,12 +264,15 @@ function diff_bytes {
 function added {
     awk '/^+/ {print $0}'
 }
+
 function modified {
     awk '/^M/ {print $0}'
 }
+
 function added_and_modified {
     awk '! /^M|+/ {$0=""; print $NF}'
 }
+
 function removed {
     awk '/^-/ {print $0}'
 }
@@ -254,11 +293,13 @@ function backup {
            --tag "$tag" \
            "${include_paths[@]}"
 }
+
 function check {
     log "CHECKING..."
 
     restic check
 }
+
 function diff {
     log "DIFFING..."
 
@@ -324,6 +365,7 @@ function expire {
            $(tag) \
            --prune ${keep_policy[@]}
 }
+
 function passthrough {
     # Pass command through to restic.
     debug "Running: restic ${rest[@]}"
@@ -331,6 +373,7 @@ function passthrough {
     # NOTE: Not sure if that should be quoted.
     restic "${rest[@]}"
 }
+
 function init {
     log "INITIALIZING..."
 
@@ -432,6 +475,9 @@ function compare_dir {
         cmp "$live_file" "$restored_file" || error "File differs: $live_file"
     done
 }
+
+# * Check if we're running on OSX - if so, GNU versions of some tools are required.
+check_osx
 
 # * Args
 
