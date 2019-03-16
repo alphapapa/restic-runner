@@ -12,9 +12,24 @@
     -  [[#tips][Tips]]
 
 ** Installation
+:PROPERTIES:
+:TOC:      0
+:END:
 
 1.  Put the =restic-runner= script in your =PATH=.
 2.  Make the directory =~/.config/backup/restic= (or a path of your choosing after changing the =config_dir= default variable in the script).
+
+*** MacOS
+
+On MacOS, you will probably need to install GNU =getopt=, as well as GNU =date= (symlinking it to =date= as needed).  You may want to put them earlier in your =PATH= when running =restic-runner=.  For example, using Homebrew, you could do this:
+
+#+BEGIN_SRC sh
+  $ brew install gnu-getopt coreutils
+  $ ln -s /usr/local/bin/gdate $HOME/.bin/date
+  $ export PATH="/usr/local/opt/gnu-getopt/bin:$HOME/.bin:$PATH"
+#+END_SRC
+
+/Note:/ The author does not use MacOS, so he cannot directly vouch for this information.  See [[https://github.com/alphapapa/restic-runner/pull/5][#5]], [[https://github.com/alphapapa/restic-runner/pull/7][#7]], [[https://github.com/alphapapa/restic-runner/issues/8][#8]], [[https://github.com/alphapapa/restic-runner/issues/9][#9]].
 
 ** Configuration
 :PROPERTIES:
