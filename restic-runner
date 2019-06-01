@@ -49,16 +49,52 @@ function die {
 }
 function usage {
     cat <<EOF
-$0 [OPTIONS] ...?
+restic-runner
 
 https://github.com/alphapapa/restic-runner
 
 See restic-runner's readme for more information.
 
-Options
+Usage:
+  restic-runner <options> command <command parameters>
+  restic-runner backup
+  restic-runner check
+  restic-runner diff --added
+  restic-runner diff --modified
+  restic-runner diff --added --modified
+  restic-runner diff --removed
+  restic-runner expire
+  restic-runner init
+  restic-runner -h | --help
+
+  restic-runner passthrough snapshot-ids
+  restic-runner passthrough help
+  restic-runner passthrough ls
+  restic-runner passthrough ls help
+
+Commands:
+  backup               run backup to repository
+  check                check repository
+  diff                 diff with optional filters
+  expire               forget and prune repository
+  init                 initialize repository
+  passthrough          pass parameters through to restic
+  passthrough help     restic --help
+  passthrough ls help  restic ls --help
+  verify-randomly      erify a number ($rest) of random files
+
+Options:
+  --repo <repo>  Repo name
+  --set  <set>   Set name
+  --tag  <tag>   Tag name
   -d, --debug    Print debug info
-  -h, --help     I need somebody!
+  -h, --help     Show usage
   -v, --verbose  Verbose output
+
+Diff Filters:
+  --added        enable added filter
+  --modified     enable modified filter
+  --removed      enable removed filter
 EOF
 }
 function log {
@@ -325,6 +361,16 @@ function expire {
            --prune ${keep_policy[@]}
 }
 function passthrough {
+    ptcount=0
+    for pt in "${rest[@]}"
+    do
+      if [[ "$pt" == "help" ]]
+      then
+        rest[$ptcount]="--help"
+      fi
+      let ptcount=$ptcount+1
+    done
+
     # Pass command through to restic.
     debug "Running: restic ${rest[@]}"
 
@@ -501,7 +547,7 @@ debug "Rest: ${rest[@]}"
 
 # ** Verify required arguments
 
-[[ $command ]] || die "No command specified"
+[[ $command ]] || die "No command specified.  $0 -h | --help for usage"
 
 # * Include repo and set files
 
