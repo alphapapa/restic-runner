@@ -22,6 +22,11 @@
 
 config_dir=~/.config/backup/restic
 
+# * Variables
+
+# Array of temporary paths to delete on exit.
+temp_paths=()
+
 # * Functions
 
 # ** Script functions
@@ -66,8 +71,17 @@ function log {
 }
 
 function cleanup {
-    # Remove temporary exclude file if it exists
-    [[ -f $exclude_file ]] && rm -f "$exclude_file"
+    # Remove temporary paths (${temp_files[@]}).
+    for path in "${temp_paths[@]}"
+    do
+        if [[ -r $path ]]
+        then
+            debug "Deleting temporary path: $path"
+            rm -rf "$path"
+        else
+            debug "Temporary path doesn't exist, not deleting: $path"
+        fi
+    done
 }
 
 function verbose {
@@ -243,6 +257,9 @@ function removed {
 function backup {
     log "BACKING UP..."
 
+    local exclude_file=$(exclude_file)
+    temp_paths+=("$exclude_file")
+
     # Cleanup exclude file on exit
     trap cleanup EXIT INT TERM
 
@@ -250,7 +267,7 @@ function backup {
            --one-file-system \
            --exclude-caches \
            $(exclude_if_present) \
-           --exclude-file $(exclude_file) \
+           --exclude-file "$exclude_file" \
            --tag "$tag" \
            "${include_paths[@]}"
 }
@@ -371,11 +388,12 @@ function verify-randomly {
 
     # Make temp dir.
     local temp_restore_dir=$(mktemp -d) || die "Unable to make temp dir"
+    temp_paths+=("$temp_restore_dir")
 
     # Remove restored files when finished or aborted.
     # NOTE: If any restored files are read-only, they will fail to be
     # removed.  Not a big deal, since they're in a temp directory.
-    trap "rm -rf $temp_restore_dir" EXIT INT TERM
+    trap cleanup EXIT INT TERM
 
     # Get paths from snapshot.
     local paths
