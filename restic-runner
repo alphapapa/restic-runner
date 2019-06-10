@@ -337,6 +337,16 @@ function init {
     restic init
 }
 
+function mount {
+    # Mount repo to given path (${rest[0]}).
+    log "MOUNTING..."
+
+    local mount_point="${rest[0]}"
+    [[ -r $mount_point ]] || die "Mount point unreadable: $mount_point"
+
+    restic mount "$mount_point"
+}
+
 function verify-randomly {
     # Verify a number ($rest) of random files from a snapshot
     # ($snapshot, default to latest) by restoring them to a temporary

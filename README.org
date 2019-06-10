@@ -142,6 +142,7 @@ Combined with the =diff= command and the =--added= filter, this makes it easy to
         -  [[#diff-snapshot1-snapshot2][diff {SNAPSHOT1} {SNAPSHOT2}]]
         -  [[#expire][expire]]
         -  [[#init][init]]
+        -  [[#mount-path][mount PATH]]
         -  [[#snapshot-ids][snapshot-ids]]
         -  [[#verify-randomly-n][verify-randomly N]]
 
@@ -226,6 +227,16 @@ Example:
 
 #+BEGIN_EXAMPLE
   restic-runner --repo REPONAME init
+#+END_EXAMPLE
+
+**** ~mount PATH~
+
+Mount the repo to ~PATH~.
+
+Example:
+
+#+BEGIN_EXAMPLE
+  restic-runner --repo REPONAME mount ~/mnt/restic
 #+END_EXAMPLE
 
 **** =snapshot-ids=
