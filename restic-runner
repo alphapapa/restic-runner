@@ -587,5 +587,7 @@ fi
 
 log "$command FINISHED.  Duration: $duration  ${du_message}"
 
+[[ $errors -gt 0 ]] && log "Errors: $errors"
+
 # Exit with number of errors, which is perfect for chronic.
 exit $errors
