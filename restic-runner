@@ -355,10 +355,11 @@ function init {
 }
 
 function mount {
-    # Mount repo to given path (${rest[0]}).
+    # Mount repo to given path ($1 or ${rest[0]}).
     log "MOUNTING..."
 
-    local mount_point="${rest[0]}"
+    local mount_point="$1"
+    [[ $mount_point ]] || local mount_point="${rest[0]}"
     [[ -r $mount_point ]] || die "Mount point unreadable: $mount_point"
 
     restic mount "$mount_point"
