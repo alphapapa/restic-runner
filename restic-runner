@@ -471,6 +471,7 @@ do
     case "$1" in
         -d|--debug)
             debug=true
+            verbose=true
             ;;
         -h|--help)
             usage
