@@ -144,7 +144,7 @@ Combined with the =diff= command and the =--added= filter, this makes it easy to
         -  [[#init][init]]
         -  [[#mount-path][mount PATH]]
         -  [[#snapshot-ids][snapshot-ids]]
-        -  [[#verify-randomly-n][verify-randomly N]]
+        -  [[#verify-randomly-n][verify-randomly {N}]]
 
 **** =backup=
 
@@ -256,9 +256,9 @@ Example:
   restic-runner --repo REPONAME --tag TAG snapshot-ids
 #+END_EXAMPLE
 
-**** =verify-randomly N=
+**** =verify-randomly [N]=
 
-Verify =N= (default 10) random files from the latest snapshot by restoring them to a temporary directory.  The directory is removed afterward.  If =--compare= is specified, the restored files are compared with the live versions.
+Verify =N= (default 10) random files from the latest snapshot.  If =--compare= is specified, the restored files are compared with the live versions.
 
 Note that the =--set SETNAME= option may be specified to e.g. choose the latest snapshot in =SETNAME=, or omitted to e.g. choose the latest snapshot in the repo.
 
