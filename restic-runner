@@ -377,6 +377,13 @@ function verify-randomly {
     # ($snapshot, default to latest) by restoring them to a temporary
     # directory and checking Restic's exit status.
 
+    # FIXME: Should only compare when --compare is used, otherwise
+    # should just try to cat the files (although I don't know if we
+    # can catch IO errors in case reading a file from the mounted repo
+    # fails; does cat exit nonzero in that case?).  Neglected this
+    # when the function was rewritten to use mounting instead of
+    # restoring to temp dirs.
+
     debug "Verifying randomly..."
 
     # Disable disk usage report for this command since the repo size
@@ -414,6 +421,7 @@ function verify-randomly {
     trap cleanup EXIT INT TERM
 
     mount_point=$(mktemp -d) || die "Unable to make temp mount point dir."
+    # FIXME: Cleanup mount point.
 
     debug "Mounting repo at: $mount_point"
     mount "$mount_point" &>"$mount_output" &
