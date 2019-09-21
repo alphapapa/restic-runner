@@ -110,11 +110,12 @@ function verbose {
 function exclude_file {
     # Echo path to temp file containing exclude patterns.
 
-    exclude_file=$(mktemp) || die "Can't get tempfile"
+    local exclude_file=$(mktemp) || die "Can't get tempfile"
+    temp_paths+=("$exclude_file")
 
     for pattern in "${exclude_patterns[@]}"
     do
-        echo "$pattern" >>$exclude_file
+        echo "$pattern" >>"$exclude_file"
     done
 
     echo "$exclude_file"
