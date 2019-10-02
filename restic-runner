@@ -13,14 +13,15 @@
 
 # Backup set config files should specify these variables:
 
-# tag: Tag string for backup set.
+# tag: Tag string for backup set. Comma separated list
 # include_paths: An array of strings, each of which is a path to backup.
 # exclude_patterns: An array of strings, each of which is an exclude glob pattern.
 # keep_policy: An array of "--keep-period N" strings (unquoted in the array)
 
 # * Defaults
 
-config_dir=~/.config/backup/restic
+config_dir=${RESTIC_RUNNER_CONFIG_DIR:-$HOME/.config/backup/restic}
+errors=0
 
 # * Variables
 
@@ -159,7 +160,16 @@ function tag {
 
     if [[ $tag ]]
     then
-        echo "--tag $tag"
+        echo "--tag $(echo $tag | sed -e 's/,/ --tag /g')"
+    fi
+}
+
+function hostname {
+    # Echo "--hostname HOSTNAME" if RESTIC_HOSTNAME is set, otherwise nothing.
+
+    if [[ ! -z $RESTIC_HOSTNAME ]]
+    then
+        echo "--host $RESTIC_HOSTNAME"
     fi
 }
 
@@ -170,7 +180,7 @@ function snapshot-ids {
     unset du
 
     restic snapshots \
-           --tag "$tag" \
+           $(tag) \
         | head -n -2 \
         | tail -n +3 \
         | awk '/^[^ ]/ { print $1 }'
@@ -275,8 +285,9 @@ function backup {
            --one-file-system \
            --exclude-caches \
            $(exclude_if_present) \
+           $(hostname) \
            --exclude-file "$exclude_file" \
-           --tag "$tag" \
+           $(tag) \
            "${include_paths[@]}"
 }
 function check {
