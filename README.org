@@ -55,6 +55,7 @@ It may also *define* these variables:
 
 +  =du=: Set to =true= to report the repo size and difference after running a Restic command.  This should only be enabled for local repos (e.g. not SFTP ones).
 +  =keep_policy=: A Bash array containing a list of =--keep-X= options.
++  =RESTIC_HOSTNAME=: A custom hostname to use for your backups - defaults to the hostname of the machine
 
 Example:
 

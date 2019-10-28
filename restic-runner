@@ -163,6 +163,15 @@ function tag {
     fi
 }
 
+function hostname {
+    # Echo "--hostname HOSTNAME" if RESTIC_HOSTNAME is set, otherwise nothing.
+
+    if [[ ! -z "$RESTIC_HOSTNAME" ]]
+    then
+        echo "--host $RESTIC_HOSTNAME"
+    fi
+}	
+
 function snapshot-ids {
     # Return list of snapshot IDs
 
@@ -275,6 +284,7 @@ function backup {
            --one-file-system \
            --exclude-caches \
            $(exclude_if_present) \
+           $(hostname) \
            --exclude-file "$exclude_file" \
            --tag "$tag" \
            "${include_paths[@]}"
