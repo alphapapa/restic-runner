@@ -12,9 +12,24 @@
     -  [[#tips][Tips]]
 
 ** Installation
+:PROPERTIES:
+:TOC:      0
+:END:
 
 1.  Put the =restic-runner= script in your =PATH=.
 2.  Make the directory =~/.config/backup/restic= (or a path of your choosing after changing the =config_dir= default variable in the script).
+
+*** MacOS
+
+On MacOS, you will probably need to install GNU =getopt=, as well as GNU =date= (symlinking it to =date= as needed).  You may want to put them earlier in your =PATH= when running =restic-runner=.  For example, using Homebrew, you could do this:
+
+#+BEGIN_SRC sh
+  $ brew install gnu-getopt coreutils
+  $ ln -s /usr/local/bin/gdate $HOME/.bin/date
+  $ export PATH="/usr/local/opt/gnu-getopt/bin:$HOME/.bin:$PATH"
+#+END_SRC
+
+/Note:/ The author does not use MacOS, so he cannot directly vouch for this information.  See [[https://github.com/alphapapa/restic-runner/pull/5][#5]], [[https://github.com/alphapapa/restic-runner/pull/7][#7]], [[https://github.com/alphapapa/restic-runner/issues/8][#8]], [[https://github.com/alphapapa/restic-runner/issues/9][#9]].
 
 ** Configuration
 :PROPERTIES:
@@ -127,8 +142,9 @@ Combined with the =diff= command and the =--added= filter, this makes it easy to
         -  [[#diff-snapshot1-snapshot2][diff {SNAPSHOT1} {SNAPSHOT2}]]
         -  [[#expire][expire]]
         -  [[#init][init]]
+        -  [[#mount-path][mount PATH]]
         -  [[#snapshot-ids][snapshot-ids]]
-        -  [[#verify-randomly-n][verify-randomly N]]
+        -  [[#verify-randomly-n][verify-randomly {N}]]
 
 **** =backup=
 
@@ -213,6 +229,16 @@ Example:
   restic-runner --repo REPONAME init
 #+END_EXAMPLE
 
+**** ~mount PATH~
+
+Mount the repo to ~PATH~.
+
+Example:
+
+#+BEGIN_EXAMPLE
+  restic-runner --repo REPONAME mount ~/mnt/restic
+#+END_EXAMPLE
+
 **** =snapshot-ids=
 
 Print a list of snapshot IDs, one per line.
@@ -230,9 +256,9 @@ Example:
   restic-runner --repo REPONAME --tag TAG snapshot-ids
 #+END_EXAMPLE
 
-**** =verify-randomly N=
+**** =verify-randomly [N]=
 
-Verify =N= (default 10) random files from the latest snapshot by restoring them to a temporary directory.  The directory is removed afterward.  If =--compare= is specified, the restored files are compared with the live versions.
+Verify =N= (default 10) random files from the latest snapshot.  If =--compare= is specified, the restored files are compared with the live versions.
 
 Note that the =--set SETNAME= option may be specified to e.g. choose the latest snapshot in =SETNAME=, or omitted to e.g. choose the latest snapshot in the repo.
 
