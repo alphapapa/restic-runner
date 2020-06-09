@@ -18,10 +18,10 @@
 # exclude_patterns: An array of strings, each of which is an exclude glob pattern.
 # keep_policy: An array of "--keep-period N" strings (unquoted in the array)
 
-# * Variables
+# * Defaults
 
-# Array of temporary paths to delete on exit.
-temp_paths=()
+config_dir=/etc/restic
+RESTIC_OPTS=( -o rclone.args='serve restic --stdio --jottacloud-hard-delete --b2-hard-delete --drive-use-trash=false --verbose' --cache-dir=/srv/appdata3/restic/cache)
 
 # * Functions
 
@@ -67,24 +67,8 @@ function log {
 }
 
 function cleanup {
-    # Remove temporary paths (${temp_paths[@]}).
-    for path in "${temp_paths[@]}"
-    do
-        if [[ -r $path ]]
-        then
-            debug "Deleting temporary path: $path"
-            rm -rf "$path"
-        else
-            debug "Temporary path doesn't exist, not deleting: $path"
-        fi
-    done
-
-    if [[ $mount_point ]]
-    then
-        debug "Unmounting repo from: $mount_point"
-
-        fusermount -u "$mount_point" || error "Unable to unmount repo from: $mount_point"
-    fi
+    # Remove temporary exclude file if it exists
+    [[ -f $exclude_file ]] && rm -f "$exclude_file"
 }
 
 function verbose {
@@ -104,14 +88,13 @@ function verbose {
 # ** Helper functions
 
 function exclude_file {
-    # Echo path to temp file containing exclude patterns.
+    # Return path to temp file containing exclude patterns.
 
-    local exclude_file=$(mktemp) || die "Can't get tempfile"
-    temp_paths+=("$exclude_file")
+    exclude_file=$(mktemp) || die "Can't get tempfile"
 
     for pattern in "${exclude_patterns[@]}"
     do
-        echo "$pattern" >>"$exclude_file"
+        echo "$pattern" >>$exclude_file
     done
 
     echo "$exclude_file"
@@ -143,7 +126,7 @@ function echo_option_with_arg {
 }
 
 function repo_du {
-    du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
+    du -bs "restic '${RESTIC_OPTS[@]}' $RESTIC_OPTS_REPOSITORY" | awk '{print $1}'
 }
 
 function du_enabled {
@@ -165,7 +148,7 @@ function snapshot-ids {
     # Disable du
     unset du
 
-    $restic "${restic_opts[@]}" snapshots \
+    restic $RESTIC_OPTS snapshots \
            --tag "$tag" \
         | head -n -2 \
         | tail -n +3 \
@@ -261,24 +244,21 @@ function removed {
 function backup {
     log "BACKING UP..."
 
-    local exclude_file=$(exclude_file)
-    temp_paths+=("$exclude_file")
-
     # Cleanup exclude file on exit
     trap cleanup EXIT INT TERM
 
-    $restic "${restic_opts[@]}" backup \
+    restic "${RESTIC_OPTS[@]}" backup \
            --one-file-system \
            --exclude-caches \
            $(exclude_if_present) \
-           --exclude-file "$exclude_file" \
+           --exclude-file $(exclude_file) \
            --tag "$tag" \
            "${include_paths[@]}"
 }
 function check {
     log "CHECKING..."
 
-    $restic "${restic_opts[@]}" check
+    restic "${RESTIC_OPTS[@]}" check
 }
 function diff {
     log "DIFFING..."
@@ -334,14 +314,14 @@ function diff {
 
     log "Diff from $snapshot1 to $snapshot2"
 
-    $restic "${restic_opts[@]}" diff $snapshot1 $snapshot2 | $filter
+    restic "${RESTIC_OPTS[@]}" diff $snapshot1 $snapshot2 | $filter
 }
 
 function expire {
     log "FORGETTING AND PRUNING..."
 
     # TODO: Make prune optional or separate.
-    $restic "${restic_opts[@]}" forget \
+    restic "${RESTIC_OPTS[@]}" forget \
            $(tag) \
            --prune ${keep_policy[@]}
 }
@@ -350,23 +330,12 @@ function passthrough {
     debug "Running: restic ${rest[@]}"
 
     # NOTE: Not sure if that should be quoted.
-    $restic "${restic_opts[@]}" "${rest[@]}"
+    restic "${RESTIC_OPTS[@]}" "${rest[@]}"
 }
 function init {
     log "INITIALIZING..."
 
-    $restic "${restic_opts[@]}" init
-}
-
-function mount {
-    # Mount repo to given path ($1 or ${rest[0]}).
-    log "MOUNTING..."
-
-    local mount_point="$1"
-    [[ $mount_point ]] || local mount_point="${rest[0]}"
-    [[ -r $mount_point ]] || die "Mount point unreadable: $mount_point"
-
-    $restic "${restic_opts[@]}" mount "$mount_point"
+    restic "${RESTIC_OPTS[@]}" init
 }
 
 function verify-randomly {
@@ -374,107 +343,100 @@ function verify-randomly {
     # ($snapshot, default to latest) by restoring them to a temporary
     # directory and checking Restic's exit status.
 
-    # FIXME: Should only compare when --compare is used, otherwise
-    # should just try to cat the files (although I don't know if we
-    # can catch IO errors in case reading a file from the mounted repo
-    # fails; does cat exit nonzero in that case?).  Neglected this
-    # when the function was rewritten to use mounting instead of
-    # restoring to temp dirs.
-
-    debug "Verifying randomly..."
+    # MAYBE: It might be faster (or at least, use less disk space and be
+    # slightly safer) to FUSE-mount the repo and compare against it rather
+    # than restoring to a temp dir.
 
     # Disable disk usage report for this command since the repo size
     # doesn't change from it.
     unset du
 
-    # Number of files.  In order to get paths to files and not
-    # directories, we must check the type of each path.  Since some
-    # paths might be directories, and if discarded would decrease the
-    # number of files checked, we use a much greater number and then
-    # gather the actual number of files that we want.
     local num_files=${rest:-10}
-    local num_paths=$((num_files * 100))
 
     # Get snapshot ID.
     local snapshot=$snapshot
     if ! [[ $snapshot ]] ||  [[ $snapshot = latest ]]
     then
-        debug "Getting latest snapshot ID..."
         snapshot=$(snapshot-ids | tail -n1) || die "Unable to get latest snapshot ID"
     fi
 
+    # Make temp dir.
+    local temp_restore_dir=$(mktemp -d) || die "Unable to make temp dir"
+
+    # Remove restored files when finished or aborted.
+    # NOTE: If any restored files are read-only, they will fail to be
+    # removed.  Not a big deal, since they're in a temp directory.
+    trap "rm -rf $temp_restore_dir" EXIT INT TERM
+
     # Get paths from snapshot.
-    debug "Listing $num_paths paths in snapshot: $snapshot"
     local paths
-    readarray -t paths < <($restic "${restic_opts[@]}" ls $snapshot | shuf -n $num_paths)
+    readarray -t paths < <(restic $RESTIC_OPTS ls $snapshot | shuf -n $num_files)
     [[ $paths ]] || die "Unable to list paths in snapshot: $snapshot"
-
-    # Mount repo.  Since "restic mount" doesn't background itself (even
-    # though it says to unmount when done, while simply SIGINT'ing it
-    # causes it to unmount and exit), we have to background it, save its
-    # PID, and then spin, waiting for the mounted repo to become available.
-    local mount_output=$(mktemp) || die "Unable to make temp output file."
-    temp_paths+=("$mount_output")
-    trap cleanup EXIT INT TERM
-
-    mount_point=$(mktemp -d) || die "Unable to make temp mount point dir."
-    # FIXME: Cleanup mount point.
-
-    debug "Mounting repo at: $mount_point"
-    $restic "${restic_opts[@]}" mount "$mount_point" &>"$mount_output" &
-
-    local attempts=0
-    while [[ 1 ]]
-    do
-        if [[ $attempts -ge 10 ]]
-        then
-            die "Mounted repo never became available."
-            break  # Not sure if necessary, but it might be sometimes.
-        fi
-
-        if grep "Now serving the repository" "$mount_output"
-        then
-            debug "Mounted repo available: proceeding..."
-            break
-        else
-            ((attempts++))
-            debug "Mounted repo not yet available ($attempts attempts): waiting..."
-            sleep 10
-        fi
-    done
 
     log "VERIFYING $num_files files from snapshot $snapshot..."
 
-    local snapshot_prefix="$mount_point/ids/$snapshot/"
+    # Build the command and then eval it.  This is necessary to
+    # process the "--include" options, which may include paths with
+    # spaces, which must be quoted, so the whole command must be
+    # eval'ed by Bash to separate the arguments.
 
-    # Compare with live versions
-    log "COMPARING with live versions..."
+    # TODO: If Restic had an --include-from option that accepted a
+    # filename, it would make this easier.
+    local command="restic '${RESTIC_OPTS[@]}' \
+          restore -t $temp_restore_dir \
+          $(echo_option_with_arg include paths) \
+          $snapshot"
+    eval "$command" || die "Verify failed"
 
-    local num_compared=0
-    for path in "${paths[@]}"
+    if [[ $compare ]]
+    then
+        # Compare with live versions
+        log "COMPARING with live versions..."
+        for path in "${paths[@]}"
+        do
+            if [[ -d $path ]]
+            then
+                compare_dir "$path"
+            elif [[ -f $path ]]
+            then
+                compare_file "$path"
+            fi
+        done
+    fi
+}
+
+function compare_file {
+    # Compare file at path ($1) to version at $temp_restore_dir/$1.
+    local restored_file="${temp_restore_dir}${1}"
+    local live_file="$1"
+
+    verbose "Comparing file: $live_file"
+    cmp "$live_file" "$restored_file" || error "File differs: $live_file"
+}
+
+function compare_dir {
+    # Compare files in directory at path ($1) to versions at $temp_restore_dir/$1.
+    local path="$1"
+    local restored_dir="${temp_restore_dir}${path}"
+
+    # Find files in restored directory.
+    local restored_files
+    readarray -t restored_files < <(find "$restored_dir" -type f)
+    [[ $restored_files ]] || die "Unable to list files in restored directory: $restored_dir"
+
+    # Compare restored files with live versions.
+    for restored_file in "${restored_files[@]}"
     do
-        [[ $num_compared -ge $num_files ]] && break
+        local live_file=${restored_file#$temp_restore_dir}  # Remove temp dir from path
 
-        local snapshotted_path="${snapshot_prefix}/${path}"
-
-        if [[ -d $path ]]
-        then
-            debug "Ignoring directory: $snapshotted_path"
-
-        elif [[ -f $path ]]
-        then
-            debug $(printf "Comparing file %q to %q" "$path" "$snapshotted_path")
-            verbose $(printf "Comparing file: %q" "$path")
-
-            cmp "$path" "$snapshotted_path" || error "File differs: $path"
-            ((num_compared++))
-        fi
+        verbose "Comparing file: $live_file"
+        cmp "$live_file" "$restored_file" || error "File differs: $live_file"
     done
 }
 
 # * Args
 
-args=$(getopt -n "$0" -o dhv -l config:,compare,debug,repo:,set:,snapshot:,tag:,help,added,modified,removed,verbose -- "$@") || exit 1
+args=$(getopt -n "$0" -o dhv -l compare,debug,repo:,set:,snapshot:,tag:,help,added,modified,removed,verbose -- "$@") || exit 1
 eval set -- "$args"
 
 while true
@@ -482,7 +444,6 @@ do
     case "$1" in
         -d|--debug)
             debug=true
-            verbose=true
             ;;
         -h|--help)
             usage
@@ -490,10 +451,6 @@ do
             ;;
         -v|--verbose)
             verbose=true
-            ;;
-        --config)
-            shift
-            config=$1
             ;;
         --compare)
             compare=true
@@ -546,28 +503,25 @@ debug "Rest: ${rest[@]}"
 # ** Verify required arguments
 
 [[ $command ]] || die "No command specified"
-[[ $config ]] || config=~/.config/backup/restic
-[[ $restic ]] || restic=/usr/local/bin/restic
-[[ $restic_opts ]] || restic_opts=()
 
 # * Include repo and set files
 
 # TODO: Disable glob expansion around these.
 
-if [[ -f $config/runner ]]
+if [[ -f $config_dir/runner ]]
 then
-    source "$config/runner" \
-        || die "Can't source global config file: $config/runner"
+    source "$config_dir/runner" \
+        || die "Can't source global config file: $config_dir/runner"
 fi
 if [[ $repo ]]
 then
-    source $config/repos/$repo \
-        || die "Can't source repo file: $config/repos/$repo"
+    source $config_dir/repos/$repo \
+        || die "Can't source repo file: $config_dir/repos/$repo"
 fi
 if [[ $set ]]
 then
-    source $config/sets/$set \
-        || die "Can't source set file: $config/sets/$set"
+    source $config_dir/sets/$set \
+        || die "Can't source set file: $config_dir/sets/$set"
 fi
 
 # * Main
@@ -605,11 +559,6 @@ then
 fi
 
 log "$command FINISHED.  Duration: $duration  ${du_message}"
-
-if [[ $errors -gt 0 ]]
-then
-    log "Errors: $errors"
-fi
 
 # Exit with number of errors, which is perfect for chronic.
 exit $errors

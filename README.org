@@ -1,3 +1,9 @@
+* Fork details
+This is a fork of [[https://github.com/alphapapa/restic-runner][alphapapa/restic-runner]] that adds the following features:
+
++  =--config= flag for defining custom config directory outside of script
++  =restic= and =restic_opts= setting for custom restic binary locations and restic options
+
 * restic-runner
 
 =restic-runner= is a helper script for using [[https://github.com/restic/restic][restic]].  It makes it easy to configure backup repositories and data sets, and to operate on them.
@@ -17,7 +23,7 @@
 :END:
 
 1.  Put the =restic-runner= script in your =PATH=.
-2.  Make the directory =~/.config/backup/restic= (or a path of your choosing after changing the =config_dir= default variable in the script).
+2.  Make the directory =~/.config/backup/restic= (or a path of your choosing specified by the =--config= flag).
 
 *** MacOS
 
@@ -55,6 +61,8 @@ It may also *define* these variables:
 
 +  =du=: Set to =true= to report the repo size and difference after running a Restic command.  This should only be enabled for local repos (e.g. not SFTP ones).
 +  =keep_policy=: A Bash array containing a list of =--keep-X= options.
++  =restic=: Custom location for restic if not in =$PATH=.
++  =restic_opts=: Additional options to pass to restic.
 
 Example:
 
@@ -63,6 +71,10 @@ Example:
   export RESTIC_PASSWORD_FILE=$RESTIC_REPOSITORY/password_file
 
   du=true
+
+  restic_opts=(
+      --cache-dir=/path/to/custom/cache/dir
+  )
 
   keep_policy=(
       --keep-last 2
@@ -123,6 +135,7 @@ Run =restic-runner= with these options:
 
 +  =--repo REPONAME=: Use the name of the repo file you configured.
 +  =--set SETNAME=: Use the name of the data set file you configured.
++  =--config /path/to/config=: Use the name of the config directory if different from the default  =~/.config/backup/restic=.
 
 After each command, a log is displayed giving the duration, current repo size, and change in repo size:
 
