@@ -31,6 +31,8 @@ On MacOS, you will probably need to install GNU =getopt=, as well as GNU =date= 
 
 /Note:/ The author does not use MacOS, so he cannot directly vouch for this information.  See [[https://github.com/alphapapa/restic-runner/pull/5][#5]], [[https://github.com/alphapapa/restic-runner/pull/7][#7]], [[https://github.com/alphapapa/restic-runner/issues/8][#8]], [[https://github.com/alphapapa/restic-runner/issues/9][#9]].
 
+/Additional note:/ This project is designed for use on free, open platforms such as GNU/Linux, BSDs, etc.  Users of proprietary platforms (especially ones like MacOS, which bundle outdated and non-standard tools) may have to make various minor modifications for compatibility.  Such issues are not considered bugs in this project.
+
 ** Configuration
 :PROPERTIES:
 :TOC:      0
