@@ -146,6 +146,40 @@ function echo_option_with_arg {
     done
 }
 
+function index-of {
+    # Echo index of $1 (a value) in $2 (an array variable name).
+    local array="$2[@]" index=0
+    for value in ${!array}
+    do
+        [[ $value = $1 ]] && break
+        (( index++ ))
+    done
+    echo $index
+}
+
+function parse-snapshot-id {
+    # Echo parsed snapshot ID for $1.  "HEAD" is converted to the
+    # latest snapshot ID.  Any ID suffixed by "^" is converted to the
+    # one before it.  Also sets global $snapshot_ids if not already set.
+    if [[ $1 = HEAD ]]
+    then
+        [[ $snapshot_ids ]] || snapshot_ids=($(snapshot-ids))
+        local parsed_id=${snapshot_ids[-1]}
+    elif [[ $1 =~ \^+$ ]]
+    then
+        local offset=${#BASH_REMATCH[0]}
+        local start_id=$(parse-snapshot-id ${1//^})
+        [[ $snapshot_ids ]] || snapshot_ids=($(snapshot-ids))
+        local start_index=$(index-of $start_id snapshot_ids)
+        local parsed_index=$(( start_index - offset ))
+        local parsed_id=${snapshot_ids[$parsed_index]}
+    else
+        local parsed_id=$1
+    fi
+
+    echo $parsed_id
+}
+
 function repo_du {
     du -bs "$RESTIC_REPOSITORY" | awk '{print $1}'
 }
@@ -310,30 +344,23 @@ function diff {
     # Choose snapshot IDs
     if [[ ${rest[0]} && ${rest[1]} ]]
     then
-        debug "Using given snapshots"
+        snapshot1=$(parse-snapshot-id ${rest[0]})
+        snapshot2=$(parse-snapshot-id ${rest[1]})
 
-        snapshot1=${rest[0]}
-        snapshot2=${rest[1]}
     elif [[ ${rest[0]} ]]
     then
-        debug "Using latest snapshot and ${rest[0]}"
+        [[ ${rest[0]} = HEAD ]] && rest[0]="HEAD^"
 
-        snapshots=($(snapshot-ids))
-        snapshot1=${rest[0]}
-        snapshot2=${snapshots[$(( ${#snapshots[@]} - 1))]}  # Latest
+        snapshot1=$(parse-snapshot-id ${rest[0]})
+        snapshot2=$(parse-snapshot-id HEAD)
+
+        debug "Comparing $snapshot1 to HEAD ($snapshot2)"
+
     else
-        debug "Using latest two snapshots"
+        debug "Comparing latest two snapshots"
 
-        snapshots=($(snapshot-ids))
-
-        # Ensure there are two snapshots
-        if [[ ${#snapshots[@]} -lt 2 ]]
-        then
-            die "Only one snapshot ID found: ${snapshots[@]}"
-        fi
-
-        snapshot1=${snapshots[-2]}
-        snapshot2=${snapshots[-1]}
+        snapshot1=$(parse-snapshot-id HEAD^)
+        snapshot2=$(parse-snapshot-id HEAD)
     fi
 
     log "Diff from $snapshot1 to $snapshot2"

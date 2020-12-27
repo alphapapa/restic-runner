@@ -194,7 +194,13 @@ If unsure, you can use =restic-runner --debug= to see how arguments are parsed.
 
 **** =diff [SNAPSHOT1] [SNAPSHOT2]=
 
-Shows the diff between two snapshots.  One or more snapshot IDs may optionally be specified.  If none are given, the latest snapshot is compared with the one before it.  If one is given, it is compared with the latest.
+Shows the diff between two snapshots.  One or more snapshot IDs may optionally be specified, oldest to newest:
+
++  If none are given, the latest snapshot is compared with the one before it.
++  If one is given, it is compared with the latest.
++  If two are given, they are compared.
+
+Each snapshot ID may be suffixed by one or more ~^~ to refer to the snapshot that-many snapshots before it.  ~HEAD~ refers to the latest snapshot.
 
 These options may be specified (before the command):
 
@@ -204,11 +210,15 @@ These options may be specified (before the command):
 
 =--added= and =--modified= may be used together.
 
-Example:
+Examples:
 
-#+BEGIN_EXAMPLE
-  # Shows the diff between snapshot abcd1234 and the latest one
-  restic-runner --repo REPONAME --added --modified diff abcd1234
+#+BEGIN_EXAMPLE sh
+  # Show the paths added in the latest snapshot.
+  restic-runner --repo REPONAME --added diff HEAD^
+
+  # Show the paths added and modified between snapshot ID "deadbeef" and
+  # the snapshot before it.
+  restic-runner --repo REPONAME --added --modified diff deadbeef^ deadbeef
 #+END_EXAMPLE
 
 **** =expire=
