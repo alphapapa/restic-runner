@@ -231,6 +231,16 @@ Example:
   restic-runner --repo REPONAME expire
 #+END_EXAMPLE
 
+**** =forget=
+
+Forget snapshots according to the configured policy.
+
+Example:
+
+#+begin_example
+  restic-runner --repo REPONAME --set SETNAME forget
+#+end_example
+
 **** =init=
 
 Initialize the configured repo.
@@ -250,6 +260,16 @@ Example:
 #+BEGIN_EXAMPLE
   restic-runner --repo REPONAME mount ~/mnt/restic
 #+END_EXAMPLE
+
+**** =prune=
+
+Prune snapshots in the repo.
+
+Example:
+
+#+begin_example
+  restic-runner --repo REPONAME prune
+#+end_example
 
 **** =snapshot-ids=
 

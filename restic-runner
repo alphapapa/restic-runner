@@ -371,11 +371,24 @@ function diff {
 function expire {
     log "FORGETTING AND PRUNING..."
 
-    # TODO: Make prune optional or separate.
     restic forget \
            $(tag) \
            --prune ${keep_policy[@]}
 }
+function forget {
+    log "FORGETTING..."
+
+    restic forget \
+           $(tag) \
+           ${keep_policy[@]}
+}
+function prune {
+    log "PRUNING..."
+
+    restic prune \
+           $(tag)
+}
+
 function passthrough {
     # Pass command through to restic.
     debug "Running: restic ${rest[@]}"
