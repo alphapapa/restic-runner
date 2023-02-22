@@ -204,7 +204,7 @@ function snapshot-ids {
     unset du
 
     restic snapshots \
-           --tag "$tag" \
+           $(tag) \
         | head -n -2 \
         | tail -n +3 \
         | awk '/^[^ ]/ { print $1 }'
