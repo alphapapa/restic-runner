@@ -17,7 +17,7 @@
 :END:
 
 1.  Put the =restic-runner= script in your =PATH=.
-2.  Make the directory =~/.config/backup/restic= (or a path of your choosing after changing the =config_dir= default variable in the script).
+2.  Make the directory =~/.config/backup/restic= (or a path of your choosing after changing the =config_dir= default variable in the script or setting the RESTIC_RUNNER_CONFIG_DIR environment variable).
 
 *** MacOS
 
