@@ -13,7 +13,7 @@
 
 # Backup set config files should specify these variables:
 
-# tag: Tag string for backup set.
+# tag: Tag string for backup set. Comma separated list
 # include_paths: An array of strings, each of which is a path to backup.
 # exclude_patterns: An array of strings, each of which is an exclude glob pattern.
 # keep_policy: An array of "--keep-period N" strings (unquoted in the array)
@@ -193,7 +193,7 @@ function tag {
 
     if [[ $tag ]]
     then
-        echo "--tag $tag"
+        echo "--tag $(echo $tag | sed -e 's/,/ --tag /g')"
     fi
 }
 
@@ -310,7 +310,7 @@ function backup {
            --exclude-caches \
            $(exclude_if_present) \
            --exclude-file "$exclude_file" \
-           --tag "$tag" \
+           $(tag) \
            "${include_paths[@]}"
 }
 function check {
