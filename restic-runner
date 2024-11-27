@@ -18,6 +18,11 @@
 # exclude_patterns: An array of strings, each of which is an exclude glob pattern.
 # keep_policy: An array of "--keep-period N" strings (unquoted in the array)
 
+# * Setup
+
+# Set the locale so "date" always produces parseable output.
+export LANG=en_EN.utf8
+
 # * Defaults
 
 config_dir=~/.config/backup/restic
